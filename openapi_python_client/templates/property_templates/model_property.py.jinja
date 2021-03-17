@@ -8,6 +8,8 @@
 {{ construct_template(construct_function, property, source, initial_value=initial_value) }}
 {% endmacro %}
 
+{% macro check_type_for_construct(property, source) %}isinstance({{ source }}, dict){% endmacro %}
+
 {% macro transform(property, source, destination, declare_type=True) %}
 {% if property.required %}
 {% if property.nullable %}

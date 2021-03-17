@@ -17,6 +17,7 @@ class ModelProperty(Property):
     description: str
     relative_imports: Set[str]
     additional_properties: Union[bool, Property]
+    _json_type_string: ClassVar[str] = "Dict[str, Any]"
 
     template: ClassVar[str] = "model_property.py.jinja"
     json_is_dict: ClassVar[bool] = True
@@ -33,6 +34,9 @@ class ModelProperty(Property):
             type_string = f"Optional[{type_string}]"
             #type_string = f"Optional[{type_string}]"
         return type_string
+
+    def get_base_type_string(self, json: bool = False) -> str:
+        return self.reference.class_name
 
     def get_imports(self, *, prefix: str) -> Set[str]:
         """
