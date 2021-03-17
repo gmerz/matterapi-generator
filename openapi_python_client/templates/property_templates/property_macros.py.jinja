@@ -7,7 +7,7 @@
 {% elif property.nullable %}
 {{ property.python_name }} = None
 {% else %}
-{{ property.python_name }}: {{ property.get_type_string() }} = UNSET
+{{ property.python_name }}: {{ property.get_type_string() }} = None
 {% endif %}
 _{{ property.python_name }} = {{ source }}
 if {% if property.nullable %}_{{ property.python_name }} is not None{% endif %}{% if property.nullable and not property.required %} and {% endif %}{% if not property.required %}not isinstance(_{{ property.python_name }},  Unset){% endif %}:

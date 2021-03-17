@@ -1,0 +1,45 @@
+from typing import Optional, Union
+
+import httpx
+
+from .base import BaseDriver,AuthToken, AuthLogin
+from .client import AsyncClient, AsyncAuthenticatedClient
+from ..models.user import User
+
+
+{% for tag in tags: %}
+from ..endpoints.async_api.{{tag | snakecase}} import {{tag | pascalcase}}
+{% endfor %}
+
+class AsyncDriver(BaseDriver):
+ 
+    client : Optional[Union[AsyncClient,AsyncAuthenticatedClient]]
+    user: Optional[User]
+
+    async def login(self):
+        """
+        Login with the provided authentication information. 
+        """
+        url = str(httpx.URL(self.options.url).join(self.options.basepath))
+        self.client = self.client or AsyncClient(base_url=url, client_options=self.options.client_options)
+        
+        if isinstance(self.options.auth, AuthToken):
+            self.client = AsyncAuthenticatedClient(base_url=url, auth_token=self.options.auth.token, client_options=self.options.client_options)
+            user_api = Users(self.client)
+            self.user = await user_api.get_user("me")
+        elif isinstance(self.options.auth, AuthLogin):
+            user_api = Users(self.client)
+            response = await user_api.login(json_body=self.options.auth)
+            self.user = User.parse_obj(response.json())
+            session_token = response.headers['token']
+            self.client = AsyncAuthenticatedClient(base_url=url, auth_token = session_token, client_options=self.options.client_options)
+
+    {% for tag in tags: %}
+    @property
+    def {{tag | snakecase}}(self) -> {{tag | pascalcase}}:
+        """
+        Api endpoint for {{tag | pascalcase}}
+        """
+        return {{tag | pascalcase}}(self.client)
+    {% endfor %}
+

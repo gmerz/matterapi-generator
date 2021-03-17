@@ -15,7 +15,7 @@ from ...types import Response, UNSET
 {% set return_string = return_type(endpoint) %}
 {% set parsed_responses = (endpoint.responses | length > 0) and return_string != "None" %}
 
-def _get_kwargs(
+def _get_kwargs(client: Client,
     {{ arguments(endpoint) | indent(4) }}
 ) -> Dict[str, Any]:
     url = "{}{{ endpoint.path }}".format(
@@ -85,7 +85,7 @@ def _build_response(*, response: httpx.Response) -> Response[{{ return_string }}
     )
 
 
-def sync_detailed(
+def sync_detailed(client : Client,
     {{ arguments(endpoint) | indent(4) }}
 ) -> Response[{{ return_string }}]:
     kwargs = _get_kwargs(
@@ -99,7 +99,7 @@ def sync_detailed(
     return _build_response(response=response)
 
 {% if parsed_responses %}
-def sync(
+def sync(client : Client,
     {{ arguments(endpoint) | indent(4) }}
 ) -> Optional[{{ return_string }}]:
     """ {{ endpoint.description }} """
@@ -124,7 +124,7 @@ async def asyncio_detailed(
     return _build_response(response=response)
 
 {% if parsed_responses %}
-async def asyncio(
+async def asyncio(client : Client,
     {{ arguments(endpoint) | indent(4) }}
 ) -> Optional[{{ return_string }}]:
     """ {{ endpoint.description }} """

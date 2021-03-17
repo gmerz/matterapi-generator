@@ -1,27 +1,24 @@
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Type, TypeVar, Optional, ClassVar, Set
 
 {% if model.additional_properties %}
 from typing import List
 
 {% endif %}
 
-import attr
+from ..types import BaseConfig
 
-from ..types import UNSET, Unset
 
 {% for relative in model.relative_imports %}
 {{ relative }}
 {% endfor %}
 
-
 {% if model.additional_properties %}
 {% set additional_property_type = 'Any' if model.additional_properties == True else model.additional_properties.get_type_string() %}
 {% endif %}
-
+{#
 T = TypeVar("T", bound="{{ model.reference.class_name }}")
-
-@attr.s(auto_attribs=True)
-class {{ model.reference.class_name }}:
+#}
+class {{ model.reference.class_name }}(BaseConfig):
     """ {{ model.description }} """
     {% for property in model.required_properties + model.optional_properties %}
     {% if property.default is none and property.required %}
@@ -32,8 +29,31 @@ class {{ model.reference.class_name }}:
     {% if property.default is not none or not property.required %}
     {{ property.to_string() }}
     {% endif %}
-    {% endfor %}
-    {% if model.additional_properties %}
+  {% endfor %}
+
+
+    {% if file_properties %}
+    file_properties: ClassVar[Set[str]] = set({{ file_properties }})
+    
+    class Config:
+        arbitrary_types_allowed = True
+
+    def get_files(self):
+        response = {}
+        file_props = self.dict(include=self.file_properties, exclude_none=True)
+        for name, value in file_props.items():
+            if isinstance(value, dict):
+                response.update(value)
+            else:
+                response.update({name: value})
+        return response
+
+    def get_data(self):
+        return self.dict(exclude=self.file_properties,exclude_none=True)
+    {% endif %}
+
+
+    {#    {% if model.additional_properties %}
     additional_properties: Dict[str, {{ additional_property_type }}] = attr.ib(init=False, factory=dict)
     {% endif %}
 
@@ -128,4 +148,5 @@ class {{ model.reference.class_name }}:
 
     def __contains__(self, key: str) -> bool:
         return key in self.additional_properties
-    {% endif %}
+      {% endif %}
+      #}

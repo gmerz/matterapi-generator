@@ -1,5 +1,5 @@
 {% macro construct_function(property, source) %}
-{{ property.reference.class_name }}.from_dict({{ source }})
+{{ property.reference.class_name }}.parse_obj({{ source }})
 {% endmacro %}
 
 {% from "property_templates/property_macros.py.jinja" import construct_template %}
@@ -11,17 +11,17 @@
 {% macro transform(property, source, destination, declare_type=True) %}
 {% if property.required %}
 {% if property.nullable %}
-{{ destination }} = {{ source }}.to_dict() if {{ source }} else None
+{{ destination }} = {{ source }}.dict(exclude_unset=True) if {{ source }} else None
 {% else %}
-{{ destination }} = {{ source }}.to_dict()
+{{ destination }} = {{ source }}.dict(exclude_unset=True)
 {% endif %}
 {% else %}
-{{ destination }}{% if declare_type %}: Union[{% if property.nullable %}None, {% endif %}Unset, Dict[str, Any]]{% endif %} = UNSET
+{{ destination }}{% if declare_type %}: Union[{% if property.nullable %}None, {% endif %}Dict[str, Any]]{% endif %} = None
 if not isinstance({{ source }}, Unset):
 {% if property.nullable %}
-    {{ destination }} = {{ source }}.to_dict() if {{ source }} else None
+    {{ destination }} = {{ source }}.dict(exclude_unset=True) if {{ source }} else None
 {% else %}
-    {{ destination }} = {{ source }}.to_dict()
+    {{ destination }} = {{ source }}.dict(exclude_unset=True)
 {% endif %}
 {% endif %}
 {% endmacro %}

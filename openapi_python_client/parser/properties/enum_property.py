@@ -31,7 +31,8 @@ class EnumProperty(Property):
         if self.nullable:
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            type_string = f"Union[Unset, {type_string}]"
+            type_string = f"Optional[{type_string}]"
+            #type_string = f"Union[Unset, {type_string}]"
         return type_string
 
     def get_imports(self, *, prefix: str) -> Set[str]:

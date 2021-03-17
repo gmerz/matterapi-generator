@@ -1,0 +1,39 @@
+from pydantic import BaseModel, AnyHttpUrl, validator
+from typing import Optional, Union
+
+from .client import ClientOptions
+
+import logging
+
+log = logging.getLogger('mattermost_api.driver')
+log.setLevel(logging.INFO)
+
+class AuthLogin(BaseModel):
+    login_id : str
+    password : str
+    mfa_token : Optional[str]
+
+class AuthToken(BaseModel):
+    token : str
+
+class DriverOptions(BaseModel):
+    url : AnyHttpUrl = 'https://localhost:8065'
+    basepath: str = '/api/v4'
+    auth: Optional[Union[AuthLogin, AuthToken]]
+    client_options : Optional[ClientOptions]
+    debug: bool = False
+
+
+class BaseDriver(BaseModel):
+    """
+    Contains shared business logic of Sync and Async driver for interacting with the mattermost api
+    """
+
+    options : DriverOptions
+
+    @validator('options')
+    def set_logging_mode(cls, v):
+        if v.debug == True:
+            log.setLevel(logging.DEBUG)
+        return v
+

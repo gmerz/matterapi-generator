@@ -26,6 +26,8 @@ class Property:
     _type_string: ClassVar[str] = ""
     default: Optional[str] = attr.ib()
     python_name: str = attr.ib(init=False)
+    description: Optional[str] = attr.ib(default=None,kw_only=True)
+
 
     template: ClassVar[Optional[str]] = None
     json_is_dict: ClassVar[bool] = False
@@ -44,9 +46,11 @@ class Property:
         if no_optional:
             return self._type_string
         if self.nullable:
+            #type_string = f"Union[{type_string},None]"
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            type_string = f"Union[Unset, {type_string}]"
+            #type_string = f"Union[Unset, {type_string}]"
+            type_string = f"Optional[{type_string}]"
         return type_string
 
     def get_instance_type_string(self) -> str:
@@ -66,8 +70,8 @@ class Property:
         if self.nullable:
             imports.add("from typing import Optional")
         if not self.required:
-            imports.add("from typing import Union")
-            imports.add(f"from {prefix}types import UNSET, Unset")
+            imports.add("from typing import Optional")
+#            imports.add(f"from {prefix}types import UNSET, Unset")
         return imports
 
     def to_string(self) -> str:
@@ -75,12 +79,12 @@ class Property:
         default: Optional[str]
         if self.default is not None:
             default = self.default
-        elif not self.required:
-            default = "UNSET"
         else:
             default = None
 
         if default is not None:
             return f"{self.python_name}: {self.get_type_string()} = {default}"
+        elif not self.required:
+            return f"{self.python_name}: {self.get_type_string()} = None"
         else:
             return f"{self.python_name}: {self.get_type_string()}"

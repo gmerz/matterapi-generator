@@ -1,5 +1,6 @@
-""" Generate modern Python clients from OpenAPI """
+""" Generate modern Python clients from OpenPI """
 
+from openapi_python_client.parser.properties import FileProperty, NoneProperty
 import shutil
 import subprocess
 import sys
@@ -95,10 +96,12 @@ class Project:
                 self.project_dir.mkdir()
             except FileExistsError:
                 return [GeneratorError(detail="Directory already exists. Delete it or use the update command.")]
-        self._create_package()
         self._build_metadata()
+        self._build_track_file()
+        self._create_package()
         self._build_models()
         self._build_api()
+#        self._build_api_modules()
         self._reformat()
         return self._get_errors()
 
@@ -109,9 +112,11 @@ class Project:
             raise FileNotFoundError()
         print(f"Updating {self.package_name}")
         shutil.rmtree(self.package_dir)
+        self._build_track_file()
         self._create_package()
         self._build_models()
         self._build_api()
+#        self._build_api_modules()
         self._reformat()
         return self._get_errors()
 
@@ -216,8 +221,15 @@ class Project:
 
         model_template = self.env.get_template("model.py.jinja")
         for model in self.openapi.models.values():
+            file_properties = []
+            for prop in model.required_properties:
+                if isinstance(prop, FileProperty):
+                    file_properties.append(prop.python_name)
+            for prop in model.optional_properties:
+                if isinstance(prop, FileProperty):
+                    file_properties.append(prop.python_name)
             module_path = models_dir / f"{model.reference.module_name}.py"
-            module_path.write_text(model_template.render(model=model), encoding=self.file_encoding)
+            module_path.write_text(model_template.render(model=model,file_properties=file_properties), encoding=self.file_encoding)
             imports.append(import_string_from_reference(model.reference))
 
         # Generate enums
@@ -234,7 +246,109 @@ class Project:
         models_init_template = self.env.get_template("models_init.py.jinja")
         models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
 
+
+    def _build_track_file(self) -> None:
+        # Generate File to track api endpoints and identify changes on upgrade
+        track_file = self.project_dir / "operations"
+
+        operations = []
+        for tag, collection in self.openapi.endpoint_collections_by_tag.items():
+            for endpoint in collection.endpoints:
+                operations.append(f'{snake_case(tag)}.{snake_case(endpoint.name)}')
+
+        track_file.write_text('\n'.join(sorted(operations)), encoding=self.file_encoding)
+
+
     def _build_api(self) -> None:
+        # Generate Client
+
+        endpoint_dir = self.package_dir / "endpoints"
+        endpoint_dir.mkdir()
+
+        baseclass_path = endpoint_dir / "base.py"
+        baseclass_template = self.env.get_template("base.py.jinja")
+        baseclass_path.write_text(baseclass_template.render(), encoding=self.file_encoding)
+        # Generate endpoints
+        #api_dir = self.package_dir / "api"
+        endpoint_sync_dir = endpoint_dir / "sync_api"
+        endpoint_sync_dir.mkdir()
+#        endpoint_sync_init = endpoint_sync_dir / "__init__.py"
+#        endpoint_sync_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
+
+        endpoint_async_dir = endpoint_dir / "async_api"
+        endpoint_async_dir.mkdir()
+#        api_init = endpoint_sync_dir / "__init__.py"
+#        api_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
+
+
+        endpoint_sync_template = self.env.get_template("mattermost/endpoint_class_sync.py.jinja")
+        endpoint_async_template = self.env.get_template("mattermost/endpoint_class_async.py.jinja")
+        
+        tags = list()
+        for tag, collection in self.openapi.endpoint_collections_by_tag.items():
+            tags.append(tag)
+            for endpoint in collection.endpoints:
+#                print("RefM: ", endpoint.multipart_body_reference)
+#                print("RefF: ", endpoint.form_body_reference)
+                endpoint.response_types = set()
+                endpoint.filter_responses = list()
+                for response in endpoint.responses:
+                    endpoint.response_types.add(response.prop.get_type_string())
+#                    if (not isinstance(response.prop,NoneProperty)) and (response.source == 'None'):
+#                        print("--------------------")
+#                        pprint(endpoint.name)
+#                        pprint(endpoint.responses)
+#                for prop in endpoint.query_parameters:
+#                    print(f'{prop.name}: {prop.description}')
+#                for prop in endpoint.path_parameters:
+#                    print(f'{prop.name}: {prop.description}')
+#                if endpoint.json_body:
+#                    print(f'JSON BODY: {endpoint.json_body}')
+            #tag_dir = api_dir / tag
+            #tag_dir.mkdir()
+            #(tag_dir / "__init__.py").touch()
+
+            endpoint_sync_path = endpoint_sync_dir / f"{snake_case(tag)}.py"
+            endpoint_sync_path.write_text(endpoint_sync_template.render(tag=utils.pascal_case(tag),collection=collection), encoding=self.file_encoding)
+
+            endpoint_async_path = endpoint_async_dir / f"{snake_case(tag)}.py"
+            endpoint_async_path.write_text(endpoint_async_template.render(tag=utils.pascal_case(tag),collection=collection), encoding=self.file_encoding)
+
+
+        driver_dir = self.package_dir / "driver"
+        driver_dir.mkdir()
+
+        client_path = driver_dir / "client.py"
+        client_template = self.env.get_template("mattermost/client_base.py.jinja")
+        http_methods = ['get', 'options', 'head', 'post', 'put', 'patch', 'delete']
+        client_path.write_text(client_template.render(methods=http_methods), encoding=self.file_encoding)
+
+        driver_base_path = driver_dir / "base.py"
+        driver_base_template = self.env.get_template("mattermost/driver_base.py.jinja")
+        driver_base_path.write_text(driver_base_template.render(), encoding=self.file_encoding)
+
+        driver_exceptions_path = driver_dir / "exceptions.py"
+        driver_exceptions_template = self.env.get_template("mattermost/exceptions.py.jinja")
+        driver_exceptions_path.write_text(driver_exceptions_template.render(), encoding=self.file_encoding)
+
+        driver_sync_path = driver_dir / "sync_driver.py"
+        driver_sync_template = self.env.get_template("mattermost/driver_sync.py.jinja")
+        driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
+
+        driver_sync_path = driver_dir / "async_driver.py"
+        driver_sync_template = self.env.get_template("mattermost/driver_async.py.jinja")
+        driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
+
+
+
+
+
+
+            #for endpoint in collection.endpoints:
+            #    module_path = tag_dir / f"{snake_case(endpoint.name)}.py"
+            #    module_path.write_text(endpoint_template.render(endpoint=endpoint), encoding=self.file_encoding)
+            
+    def _build_api_modules(self) -> None:
         # Generate Client
         client_path = self.package_dir / "client.py"
         client_template = self.env.get_template("client.py.jinja")
@@ -246,8 +360,27 @@ class Project:
         api_init = api_dir / "__init__.py"
         api_init.write_text('""" Contains methods for accessing the API """', encoding=self.file_encoding)
 
+
         endpoint_template = self.env.get_template("endpoint_module.py.jinja")
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
+#            tags[tag] = defaultdict(list)
+#            if tag == 'users':
+#                from pprint import pprint
+#                for endpoint in collection.endpoints:
+#                    print("--------------------")
+#                    pprint(endpoint.name)
+#                    pprint(endpoint.path)
+#                    pprint(endpoint.query_parameters)
+#                    pprint(endpoint.path_parameters)
+#                    pprint(endpoint.header_parameters)
+#                    pprint(endpoint.cookie_parameters)
+#                    pprint(endpoint.json_body)
+#                    pprint(endpoint.form_body_reference)
+#                    pprint(endpoint.multipart_body_reference)
+#                    pprint(endpoint.responses)
+#                    pprint(endpoint.relative_imports)
+
+
             tag_dir = api_dir / tag
             tag_dir.mkdir()
             (tag_dir / "__init__.py").touch()
@@ -255,6 +388,7 @@ class Project:
             for endpoint in collection.endpoints:
                 module_path = tag_dir / f"{snake_case(endpoint.name)}.py"
                 module_path.write_text(endpoint_template.render(endpoint=endpoint), encoding=self.file_encoding)
+
 
 
 def _get_project_for_url_or_path(

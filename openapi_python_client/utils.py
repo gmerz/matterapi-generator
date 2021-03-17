@@ -26,6 +26,7 @@ def fix_reserved_words(value: str) -> str:
 
 def group_title(value: str) -> str:
     value = re.sub(r"([A-Z]{2,})([A-Z][a-z]|[ \-_]|$)", lambda m: m.group(1).title() + m.group(2), value.strip())
+    value = re.sub('(^|[ _-]+|[a-z]+)([A-Z])([A-Z][a-z])', lambda m: m.group(1) + m.group(2) + m.group(3).lower(), value)
     value = re.sub(r"(^|[ _-])([A-Z])", lambda m: m.group(1) + m.group(2).lower(), value)
     return value
 

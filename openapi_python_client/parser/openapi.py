@@ -102,7 +102,7 @@ class Endpoint:
     errors: List[ParseError] = field(default_factory=list)
 
     @staticmethod
-    def parse_request_form_body(body: oai.RequestBody) -> Optional[Reference]:
+    def parse_request_form_body_ref(body: oai.RequestBody) -> Optional[Reference]:
         """ Return form_body_reference """
         body_content = body.content
         form_body = body_content.get("application/x-www-form-urlencoded")
@@ -111,13 +111,50 @@ class Endpoint:
         return None
 
     @staticmethod
-    def parse_multipart_body(body: oai.RequestBody) -> Optional[Reference]:
+    def parse_request_form_body(
+        *, body: oai.RequestBody, schemas: Schemas, parent_name: str
+    ) -> Tuple[Union[Property, PropertyError, None], Schemas]:
+        """ Return json_body """
+        body_content = body.content
+        json_body = body_content.get("application/x-www-form-urlencoded")
+        if json_body is not None and json_body.media_type_schema is not None:
+            return property_from_data(
+                name="form_data",
+                required=True,
+                data=json_body.media_type_schema,
+                schemas=schemas,
+                parent_name=parent_name,
+            )
+        return None, schemas
+
+
+    @staticmethod
+    def parse_multipart_body_ref(body: oai.RequestBody) -> Optional[Reference]:
         """ Return form_body_reference """
         body_content = body.content
         json_body = body_content.get("multipart/form-data")
         if json_body is not None and isinstance(json_body.media_type_schema, oai.Reference):
             return Reference.from_ref(json_body.media_type_schema.ref)
         return None
+
+
+    @staticmethod
+    def parse_multipart_body(
+        *, body: oai.RequestBody, schemas: Schemas, parent_name: str
+    ) -> Tuple[Union[Property, PropertyError, None], Schemas]:
+        """ Return json_body """
+        body_content = body.content
+        json_body = body_content.get("multipart/form-data")
+        if json_body is not None and json_body.media_type_schema is not None:
+            return property_from_data(
+                name="multipart_data",
+                required=True,
+                data=json_body.media_type_schema,
+                schemas=schemas,
+                parent_name=parent_name,
+            )
+        return None, schemas
+
 
     @staticmethod
     def parse_request_json_body(
@@ -145,22 +182,37 @@ class Endpoint:
         if data.requestBody is None or isinstance(data.requestBody, oai.Reference):
             return endpoint, schemas
 
-        endpoint.form_body_reference = Endpoint.parse_request_form_body(data.requestBody)
+        #endpoint.form_body_reference = Endpoint.parse_request_form_body(data.requestBody)
+        form_body_reference, schemas = Endpoint.parse_request_form_body(
+            body=data.requestBody, schemas=schemas, parent_name=endpoint.name
+            )
+        if isinstance(form_body_reference, ParseError):
+            return ParseError(detail=f"cannot parse body of endpoint {endpoint.name}", data=form_body_reference.data), schemas
+
+
         json_body, schemas = Endpoint.parse_request_json_body(
             body=data.requestBody, schemas=schemas, parent_name=endpoint.name
         )
         if isinstance(json_body, ParseError):
             return ParseError(detail=f"cannot parse body of endpoint {endpoint.name}", data=json_body.data), schemas
 
-        endpoint.multipart_body_reference = Endpoint.parse_multipart_body(data.requestBody)
-
-        if endpoint.form_body_reference:
-            endpoint.relative_imports.add(
-                import_string_from_reference(endpoint.form_body_reference, prefix="...models")
+        #endpoint.multipart_body_reference = Endpoint.parse_multipart_body(data.requestBody)
+        multipart_body_reference, schemas = Endpoint.parse_multipart_body(
+            body=data.requestBody, schemas=schemas, parent_name=endpoint.name
             )
-        if endpoint.multipart_body_reference:
-            endpoint.relative_imports.add(
-                import_string_from_reference(endpoint.multipart_body_reference, prefix="...models")
+        if isinstance(multipart_body_reference, ParseError):
+            return ParseError(detail=f"cannot parse body of endpoint {endpoint.name}", data=multipart_body_reference.data), schemas
+
+
+        if form_body_reference:
+            endpoint.form_body_reference = form_body_reference
+            endpoint.relative_imports.update(
+                form_body_reference.get_imports(prefix="...")
+            )
+        if multipart_body_reference:
+            endpoint.multipart_body_reference = multipart_body_reference
+            endpoint.relative_imports.update(
+                multipart_body_reference.get_imports(prefix="...")
             )
         if json_body is not None:
             endpoint.json_body = json_body
@@ -214,6 +266,7 @@ class Endpoint:
         for param in data.parameters:
             if isinstance(param, oai.Reference) or param.param_schema is None:
                 continue
+            param.param_schema.description = param.description
             prop, schemas = property_from_data(
                 name=param.name,
                 required=param.required,
@@ -247,6 +300,8 @@ class Endpoint:
             name = generate_operation_id(path=path, method=method)
         else:
             name = data.operationId
+
+        name = name.removeprefix(f"{tag}_")
 
         endpoint = Endpoint(
             path=path,

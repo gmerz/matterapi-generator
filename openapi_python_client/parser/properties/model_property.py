@@ -27,9 +27,11 @@ class ModelProperty(Property):
         if no_optional:
             return type_string
         if self.nullable:
+            #type_string = f"Union[{type_string}, None]"
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            type_string = f"Union[{type_string}, Unset]"
+            type_string = f"Optional[{type_string}]"
+            #type_string = f"Optional[{type_string}]"
         return type_string
 
     def get_imports(self, *, prefix: str) -> Set[str]:

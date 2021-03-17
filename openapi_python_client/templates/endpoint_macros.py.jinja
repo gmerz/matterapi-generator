@@ -56,7 +56,7 @@ if {% if not property.required %}not isinstance({{ property_name }}, Unset){% en
             {% endif %}
         {% endif %}
     {% endfor %}
-params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+params = {k: v for k, v in params.items() if v is not None}
 {% endif %}
 {% endmacro %}
 
@@ -72,7 +72,24 @@ params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 {% endmacro %}
 
 {% macro return_type(endpoint) %}
-{% if endpoint.responses | length == 0 %}
+{% set response_strings = endpoint.response_types | unique | list %}
+{%- if response_strings | length == 0 %}
+None
+{%- elif response_strings | length == 1 %}
+{{ response_strings[0] }}
+{%- else %}
+Union[
+    {% for response in response_strings %}
+    {{ response }}{{ "," if not loop.last }}
+    {% endfor %}
+]
+{%- endif %}
+{% endmacro %}
+
+
+
+{% macro return_type_all(endpoint) %}
+{%- if endpoint.responses | length == 0 %}
 None
 {%- elif endpoint.responses | length == 1 %}
 {{ endpoint.responses[0].prop.get_type_string() }}
@@ -87,24 +104,22 @@ Union[
 
 {# The all the kwargs passed into an endpoint (and variants thereof)) #}
 {% macro arguments(endpoint) %}
-*,
-{# Proper client based on whether or not the endpoint requires authentication #}
-{% if endpoint.requires_security %}
-client: AuthenticatedClient,
-{% else %}
-client: Client,
-{% endif %}
-{# path parameters #}
 {% for parameter in endpoint.path_parameters %}
 {{ parameter.to_string() }},
 {% endfor %}
+{% if endpoint.form_body_reference or endpoint.multipart_body_reference or endpoint.json_body or 
+endpoint.query_parameters or endpoint.header_parameters or endpoint.cookie_parameters %}
+*,
+{% endif %}
+{# Proper client based on whether or not the endpoint requires authentication #}
+{# path parameters #}
 {# Form data if any #}
 {% if endpoint.form_body_reference %}
-form_data: {{ endpoint.form_body_reference.class_name }},
+form_data: {{ endpoint.form_body_reference.get_type_string() }},
 {% endif %}
 {# Multipart data if any #}
 {% if endpoint.multipart_body_reference %}
-multipart_data: {{ endpoint.multipart_body_reference.class_name }},
+multipart_data: {{ endpoint.multipart_body_reference.get_type_string() }},
 {% endif %}
 {# JSON body if any #}
 {% if endpoint.json_body %}

@@ -132,7 +132,8 @@ class ListProperty(Property, Generic[InnerProp]):
         if self.nullable:
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            type_string = f"Union[Unset, {type_string}]"
+            #type_string = f"Union[Unset, {type_string}]"
+            type_string = f"Optional[{type_string}]"
         return type_string
 
     def get_instance_type_string(self) -> str:
@@ -175,7 +176,8 @@ class UnionProperty(Property):
         if no_optional:
             return type_string
         if not self.required:
-            type_string = f"Union[Unset, {inner_prop_string}]"
+            #type_string = f"Union[Unset, {inner_prop_string}]"
+            type_string = f"Optional[{inner_prop_string}]"
         if self.nullable:
             type_string = f"Optional[{type_string}]"
         return type_string
@@ -209,6 +211,7 @@ def _string_based_property(
             required=required,
             default=convert("datetime.datetime", data.default),
             nullable=data.nullable,
+            description=data.description,
         )
     elif string_format == "date":
         return DateProperty(
@@ -216,6 +219,7 @@ def _string_based_property(
             required=required,
             default=convert("datetime.date", data.default),
             nullable=data.nullable,
+            description=data.description,
         )
     elif string_format == "binary":
         return FileProperty(
@@ -223,6 +227,7 @@ def _string_based_property(
             required=required,
             default=None,
             nullable=data.nullable,
+            description=data.description,
         )
     else:
         return StringProperty(
@@ -231,6 +236,7 @@ def _string_based_property(
             required=required,
             pattern=data.pattern,
             nullable=data.nullable,
+            description=data.description,
         )
 
 
@@ -379,6 +385,7 @@ def build_enum_property(
         reference=reference,
         values=values,
         value_type=value_type,
+        description=data.description,
     )
     schemas = attr.evolve(schemas, enums={**schemas.enums, prop.reference.class_name: prop})
     return prop, schemas
@@ -404,6 +411,7 @@ def build_union_property(
             default=default,
             inner_properties=sub_properties,
             nullable=data.nullable,
+            description=data.description,
         ),
         schemas,
     )
@@ -426,6 +434,7 @@ def build_list_property(
             default=None,
             inner_property=inner_prop,
             nullable=data.nullable,
+            description=data.description,
         ),
         schemas,
     )
@@ -456,7 +465,7 @@ def _property_from_data(
     if data.anyOf or data.oneOf:
         return build_union_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
     if not data.type:
-        return NoneProperty(name=name, required=required, nullable=False, default=None), schemas
+        return NoneProperty(name=name, required=required, nullable=False, default=None, description=data.description), schemas
 
     if data.type == "string":
         return _string_based_property(name=name, required=required, data=data), schemas
@@ -467,6 +476,7 @@ def _property_from_data(
                 default=convert("float", data.default),
                 required=required,
                 nullable=data.nullable,
+                description=data.description,
             ),
             schemas,
         )
@@ -477,6 +487,7 @@ def _property_from_data(
                 default=convert("int", data.default),
                 required=required,
                 nullable=data.nullable,
+                description=data.description,
             ),
             schemas,
         )
@@ -487,6 +498,7 @@ def _property_from_data(
                 required=required,
                 default=convert("bool", data.default),
                 nullable=data.nullable,
+                description=data.description,
             ),
             schemas,
         )
