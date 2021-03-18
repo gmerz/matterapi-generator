@@ -8,13 +8,12 @@ from ..models.user import User
 
 
 {% for tag in tags: %}
-from ..endpoints.sync_api.{{tag | snakecase}} import {{tag | pascalcase}}
+from ..endpoints.sync_api.{{tag | snakecase}} import {{tag | pascalcase}}Api
 {% endfor %}
 
 class SyncDriver(BaseDriver):
  
     client : Optional[Union[SyncClient,SyncAuthenticatedClient]]
-    user: Optional[User]
 
     def login(self):
         """
@@ -24,22 +23,27 @@ class SyncDriver(BaseDriver):
         self.client = self.client or SyncClient(base_url=url, client_options=self.options.client_options)
         
         if isinstance(self.options.auth, AuthToken):
+            self.active_token = self.options.auth.token
             self.client = SyncAuthenticatedClient(base_url=url, auth_token=self.options.auth.token, client_options=self.options.client_options)
-            user_api = Users(self.client)
+            user_api = UsersApi(self.client)
             self.user = user_api.get_user("me")
         elif isinstance(self.options.auth, AuthLogin):
-            user_api = Users(self.client)
+            user_api = UsersApi(self.client)
             response = user_api.login(json_body=self.options.auth)
             self.user = User.parse_obj(response.json())
             session_token = response.headers['token']
+            self.active_token = session_token
             self.client = SyncAuthenticatedClient(base_url=url, auth_token = session_token, client_options=self.options.client_options)
+        else:
+            raise ApiError("No valid authentication credentials provided")
+
 
     {% for tag in tags: %}
     @property
-    def {{tag | snakecase}}(self) -> {{tag | pascalcase}}:
+    def {{tag | snakecase}}(self) -> {{tag | pascalcase}}Api:
         """
         Api endpoint for {{tag | pascalcase}}
         """
-        return {{tag | pascalcase}}(self.client)
+        return {{tag | pascalcase}}Api(self.client)
     {% endfor %}
 

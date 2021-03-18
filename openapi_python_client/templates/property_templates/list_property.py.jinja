@@ -39,7 +39,7 @@ for {{ inner_source }} in {{ source }}:
 {% if property.nullable %}
 if {{ source }} is None:
     {{ destination }} = None
-else:
+else3:
     {{ _transform(property, source, destination) | indent(4) }}
 {% else %}
 {{ _transform(property, source, destination) }}

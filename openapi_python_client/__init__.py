@@ -288,25 +288,18 @@ class Project:
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
             tags.append(tag)
             for endpoint in collection.endpoints:
-#                print("RefM: ", endpoint.multipart_body_reference)
-#                print("RefF: ", endpoint.form_body_reference)
-                endpoint.response_types = set()
-                endpoint.filter_responses = list()
+
+                # Hack to filter out duplicate 'None' responses and make the ordering for generated return types stable
+                response_types = set()
                 for response in endpoint.responses:
-                    endpoint.response_types.add(response.prop.get_type_string())
-#                    if (not isinstance(response.prop,NoneProperty)) and (response.source == 'None'):
-#                        print("--------------------")
-#                        pprint(endpoint.name)
-#                        pprint(endpoint.responses)
-#                for prop in endpoint.query_parameters:
-#                    print(f'{prop.name}: {prop.description}')
-#                for prop in endpoint.path_parameters:
-#                    print(f'{prop.name}: {prop.description}')
-#                if endpoint.json_body:
-#                    print(f'JSON BODY: {endpoint.json_body}')
-            #tag_dir = api_dir / tag
-            #tag_dir.mkdir()
-            #(tag_dir / "__init__.py").touch()
+                    response_types.add(response.prop.get_type_string())
+                if 'None' in response_types:
+                    response_types.remove('None')
+                    response_types = sorted(response_types) + ['None']
+                else:
+                    response_types = sorted(response_types)
+                endpoint.response_types = response_types
+
 
             endpoint_sync_path = endpoint_sync_dir / f"{snake_case(tag)}.py"
             endpoint_sync_path.write_text(endpoint_sync_template.render(tag=utils.pascal_case(tag),collection=collection), encoding=self.file_encoding)
@@ -339,14 +332,6 @@ class Project:
         driver_sync_template = self.env.get_template("mattermost/driver_async.py.jinja")
         driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
 
-
-
-
-
-
-            #for endpoint in collection.endpoints:
-            #    module_path = tag_dir / f"{snake_case(endpoint.name)}.py"
-            #    module_path.write_text(endpoint_template.render(endpoint=endpoint), encoding=self.file_encoding)
             
     def _build_api_modules(self) -> None:
         # Generate Client
@@ -363,24 +348,7 @@ class Project:
 
         endpoint_template = self.env.get_template("endpoint_module.py.jinja")
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
-#            tags[tag] = defaultdict(list)
-#            if tag == 'users':
-#                from pprint import pprint
-#                for endpoint in collection.endpoints:
-#                    print("--------------------")
-#                    pprint(endpoint.name)
-#                    pprint(endpoint.path)
-#                    pprint(endpoint.query_parameters)
-#                    pprint(endpoint.path_parameters)
-#                    pprint(endpoint.header_parameters)
-#                    pprint(endpoint.cookie_parameters)
-#                    pprint(endpoint.json_body)
-#                    pprint(endpoint.form_body_reference)
-#                    pprint(endpoint.multipart_body_reference)
-#                    pprint(endpoint.responses)
-#                    pprint(endpoint.relative_imports)
-
-
+            
             tag_dir = api_dir / tag
             tag_dir.mkdir()
             (tag_dir / "__init__.py").touch()

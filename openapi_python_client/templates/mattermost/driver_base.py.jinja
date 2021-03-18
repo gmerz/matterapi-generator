@@ -1,39 +1,144 @@
-from pydantic import BaseModel, AnyHttpUrl, validator
-from typing import Optional, Union
+import abc
+import asyncio
+import inspect
+import json
+import logging
+import socket
+from typing import Callable, Optional, Union, Dict
+from urllib.parse import urlparse, urljoin
 
+import websockets
+from pydantic import AnyHttpUrl, BaseModel, validator, AnyUrl
+
+from ..models.user import User
 from .client import ClientOptions
 
-import logging
+logger = logging.getLogger("mattermostapi.driver")
+logger.setLevel(logging.INFO)
 
-log = logging.getLogger('mattermost_api.driver')
-log.setLevel(logging.INFO)
 
 class AuthLogin(BaseModel):
-    login_id : str
-    password : str
-    mfa_token : Optional[str]
+    login_id: str
+    password: str
+    mfa_token: Optional[str]
+
 
 class AuthToken(BaseModel):
-    token : str
+    token: str
+
 
 class DriverOptions(BaseModel):
-    url : AnyHttpUrl = 'https://localhost:8065'
-    basepath: str = '/api/v4'
+    url: AnyHttpUrl
+    ws_url: Optional[AnyUrl]
+    basepath: str = "/api/v4"
     auth: Optional[Union[AuthLogin, AuthToken]]
-    client_options : Optional[ClientOptions]
+    client_options: Optional[ClientOptions]
     debug: bool = False
+    ws_concurrent: bool = True
+    ws_reconnect_wait_time: int = 5
+
+    @validator('ws_url', pre=True, always=True)
+    def ws_url_setter(cls, v, values):
+        if v == None:
+            if 'url' in values:
+                url = urlparse(values['url'])
+                scheme_map = {"https": "wss", "http": "ws"}
+                url = url._replace(scheme=scheme_map[url.scheme])
+                return url.geturl()
+        else:
+            return v
+
+        raise ValueError("Url is not present in values and ws_url was not set explicitly")
 
 
-class BaseDriver(BaseModel):
+class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
     """
     Contains shared business logic of Sync and Async driver for interacting with the mattermost api
     """
 
-    options : DriverOptions
+    options: DriverOptions
+    user: Optional[User]
+    active_token: Optional[str]
 
-    @validator('options')
+    @validator("options")
     def set_logging_mode(cls, v):
         if v.debug == True:
-            log.setLevel(logging.DEBUG)
+            logger.setLevel(logging.DEBUG)
         return v
+
+    @abc.abstractmethod
+    def login(self):
+        pass
+
+    async def relogin(self):
+        if inspect.iscoroutinefunction(self.login):
+            await self.login()
+        else:
+            await asyncio.to_thread(self.login)
+
+    async def start_ws(self, event_handler: Callable, relogin=False):
+        while True:
+            try:
+                await self._start_ws(event_handler)
+            except (socket.gaierror, websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+                logger.info(
+                    "Connection to websocket closed. Either the server is not reachable or authentication failed. Reconnecting in %s seconds",
+                    self.options.ws_reconnect_wait_time
+                )
+                logger.info(e)
+
+            await asyncio.sleep(self.options.ws_reconnect_wait_time)
+
+            if relogin:
+                await self.relogin()
+
+    def start_ws_sync(self, event_handler: Callable, relogin=False):
+        asyncio.run(self.start_ws(event_handler, relogin))
+
+    async def _handle_messages(self, event_handler: Callable, message : Dict):
+        if inspect.iscoroutinefunction(event_handler):
+            return asyncio.create_task(event_handler(message))
+        else:
+            return asyncio.create_task(asyncio.to_thread(event_handler, message))
+    
+    async def _handle_message_async(self, event_handler: Callable, websocket):
+        async for raw_message in websocket:
+            message = json.loads(raw_message)
+            await asyncio.to_thread(event_handler, message)
+
+    async def _start_ws(self, event_handler: Callable):
+        json_auth_data = json.dumps(
+            {"seq": 1, "action": "authentication_challenge", "data": {"token": self.active_token}}
+        ).encode("utf8")
+
+        logger.info("Connecting to websocket")
+        ws_url = urljoin(self.options.ws_url, 'api/v4/websocket')
+        async with websockets.connect(ws_url) as websocket:
+            # Authenticate
+            await websocket.send(json_auth_data)
+            hello = json.loads(await websocket.recv())
+            logger.debug("%s", hello)
+            logger.info("Connected to Mattermost server: %s", hello["data"]["server_version"])
+            # Wait for authentication 'OK'
+            async for raw_message in websocket:
+                message = json.loads(raw_message)
+                logger.debug("%s", message)
+                if message.get("seq_reply", None) == 1:
+                    if message["status"] == "OK":
+                        logger.info("Successfully authenticated to websocket")
+                        break
+                logger.info("Got a stray message during authentication procedure: %s", message)
+            tasks = set()
+            async for raw_message in websocket:
+                print("handle:")
+                message = json.loads(raw_message)
+                task = await self._handle_messages(event_handler, message)
+                if self.options.ws_concurrent:
+                    tasks.add(task)
+                    for task in list(tasks):
+                        if task.done():
+                            await task
+                            tasks.remove(task)
+                else:
+                    await task
 

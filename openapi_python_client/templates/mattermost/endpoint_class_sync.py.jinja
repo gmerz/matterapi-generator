@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union, cast
 from ..base import ApiBaseClass
+from pydantic import BaseModel
 
 {% for endpoint in collection.endpoints %}
 {% for relative in endpoint.relative_imports %}
@@ -9,7 +10,7 @@ from ..base import ApiBaseClass
 
 {% from "endpoint_macros.py.jinja" import header_params, cookie_params, query_params, json_body, return_type, arguments, client, kwargs, parse_response %}
 
-class {{tag}}(ApiBaseClass):
+class {{tag}}Api(ApiBaseClass):
 
 {% for endpoint in collection.endpoints %}
 {% set return_string = return_type(endpoint) %}

@@ -12,18 +12,27 @@
 
 {% macro transform(property, source, destination, declare_type=True) %}
 {% if property.required %}
-{% if property.nullable %}
-{{ destination }} = {{ source }}.dict(exclude_unset=True) if {{ source }} else None
-{% else %}
-{{ destination }} = {{ source }}.dict(exclude_unset=True)
-{% endif %}
-{% else %}
-{{ destination }}{% if declare_type %}: Union[{% if property.nullable %}None, {% endif %}Dict[str, Any]]{% endif %} = None
-if not isinstance({{ source }}, Unset):
+
+  {# if isinstance({{ source }}, {{property.reference.class_name}}): #}
+if isinstance({{ source }}, BaseModel): 
 {% if property.nullable %}
     {{ destination }} = {{ source }}.dict(exclude_unset=True) if {{ source }} else None
 {% else %}
     {{ destination }} = {{ source }}.dict(exclude_unset=True)
 {% endif %}
+else:
+    {{ destination }} = {{ source }}
+{% else %}
+    {{ destination }}{% if declare_type %}: Union[{% if property.nullable %}None, {% endif %}Dict[str, Any]]{% endif %} = None
+if not isinstance({{ source }}, Unset):
+    if isinstance({{ source }}, {{property.reference.class_name}}):
+    {% if property.nullable %}
+        {{ destination }} = {{ source }}.dict(exclude_unset=True) if {{ source }} else None
+    {% else %}
+        {{ destination }} = {{ source }}.dict(exclude_unset=True)
+    {% endif %}
+
+    else:
+        {{ destination }} = {{ source }}
 {% endif %}
 {% endmacro %}
