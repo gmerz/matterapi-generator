@@ -78,20 +78,24 @@ class BaseClient(BaseModel):
 
 class SyncClient(BaseClient):
 
-    _client : Any = PrivateAttr()
+    {#
 
+    _client : Any = PrivateAttr()
     @property
     def client(self):
         if not getattr(self, '_client', None):
             options = self.client_options.dict() if self.client_options else {}
             self._client = httpx.Client(**options)
-        return self._client
+            return self._client
+    #}
 
     {% for method in methods %}
     def {{method | lower}}(self, **kwargs):
-        response = self.client.{{method | lower}}(**kwargs)
-        self._check_response(response)
-        return response
+        options = self.client_options.dict() if self.client_options else {}
+        with httpx.Client(**options) as client:
+            response = client.{{method | lower}}(**kwargs)
+            self._check_response(response)
+            return response
     {%endfor %}
 
 
@@ -107,7 +111,7 @@ class SyncAuthenticatedClient(SyncClient):
 
 
 class AsyncClient(BaseClient):
-
+    {#
     _transport : Any = PrivateAttr()
 
     @property
@@ -115,11 +119,12 @@ class AsyncClient(BaseClient):
         if not getattr(self, '_transport', None):
             self._transport = httpcore.AsyncConnectionPool()
         return self._transport
+    #}
 
     {% for method in methods %}
     async def {{method | lower}}(self, **kwargs):
         options = self.client_options.dict() if self.client_options else {}
-        async with httpx.AsyncClient(transport=self.transport, **options) as client:
+        async with httpx.AsyncClient(**options) as client:
             response = await client.{{method | lower}}(**kwargs)
             self._check_response(response)
             return response
