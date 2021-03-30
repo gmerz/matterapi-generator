@@ -1,31 +1,41 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 
-T = TypeVar("T", bound="FreeFormModel")
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="AnotherAllOfSubModel")
 
 
 @attr.s(auto_attribs=True)
-class FreeFormModel:
+class AnotherAllOfSubModel:
     """  """
 
+    another_sub_property: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        another_sub_property = self.another_sub_property
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if another_sub_property is not UNSET:
+            field_dict["another_sub_property"] = another_sub_property
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        free_form_model = cls()
+        another_sub_property = d.pop("another_sub_property", UNSET)
 
-        free_form_model.additional_properties = d
-        return free_form_model
+        another_all_of_sub_model = cls(
+            another_sub_property=another_sub_property,
+        )
+
+        another_all_of_sub_model.additional_properties = d
+        return another_all_of_sub_model
 
     @property
     def additional_keys(self) -> List[str]:

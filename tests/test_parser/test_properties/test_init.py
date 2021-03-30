@@ -2,15 +2,7 @@ import pytest
 
 import openapi_python_client.schema as oai
 from openapi_python_client.parser.errors import PropertyError, ValidationError
-from openapi_python_client.parser.properties import (
-    BooleanProperty,
-    DateTimeProperty,
-    FloatProperty,
-    IntProperty,
-    ModelProperty,
-    StringProperty,
-)
-from openapi_python_client.parser.reference import Reference
+from openapi_python_client.parser.properties import BooleanProperty, FloatProperty, IntProperty
 
 MODULE_NAME = "openapi_python_client.parser.properties"
 
@@ -516,7 +508,7 @@ class TestEnumProperty:
     def test_values_from_list(self):
         from openapi_python_client.parser.properties import EnumProperty
 
-        data = ["abc", "123", "a23", "1bc", 4, -3, "a Thing WIth spaces"]
+        data = ["abc", "123", "a23", "1bc", 4, -3, "a Thing WIth spaces", ""]
 
         result = EnumProperty.values_from_list(data)
 
@@ -528,6 +520,7 @@ class TestEnumProperty:
             "VALUE_4": 4,
             "VALUE_NEGATIVE_3": -3,
             "A_THING_WITH_SPACES": "a Thing WIth spaces",
+            "VALUE_7": "",
         }
 
     def test_values_from_list_duplicate(self):
@@ -799,6 +792,51 @@ class TestPropertyFromData:
         build_union_property.assert_called_once_with(
             data=data, name=name, required=required, schemas=schemas, parent_name="parent"
         )
+
+    def test_property_from_data_union_of_one_element(self, mocker):
+        from openapi_python_client.parser.properties import ModelProperty, Reference, Schemas, property_from_data
+
+        name = "new_name"
+        required = False
+        class_name = "MyModel"
+        existing_model = ModelProperty(
+            name="old_name",
+            required=True,
+            nullable=False,
+            default=None,
+            reference=Reference(class_name=class_name, module_name="my_model"),
+            required_properties=[],
+            optional_properties=[],
+            description="",
+            relative_imports=set(),
+            additional_properties=False,
+        )
+        schemas = Schemas(models={class_name: existing_model})
+
+        data = oai.Schema.construct(
+            allOf=[oai.Reference.construct(ref=class_name)],
+            nullable=True,
+        )
+        build_union_property = mocker.patch(f"{MODULE_NAME}.build_union_property")
+        mocker.patch("openapi_python_client.utils.remove_string_escapes", return_value=name)
+
+        prop, schemas = property_from_data(
+            name=name, required=required, data=data, schemas=schemas, parent_name="parent"
+        )
+
+        assert prop == ModelProperty(
+            name=name,
+            required=required,
+            nullable=True,
+            default=None,
+            reference=Reference(class_name=class_name, module_name="my_model"),
+            required_properties=[],
+            optional_properties=[],
+            description="",
+            relative_imports=set(),
+            additional_properties=False,
+        )
+        build_union_property.assert_not_called()
 
     def test_property_from_data_unsupported_type(self, mocker):
         name = mocker.MagicMock()
@@ -1099,139 +1137,6 @@ def test_build_enums(mocker):
 
     build_enum_property.assert_called()
     build_model_property.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "additional_properties_schema, expected_additional_properties",
-    [
-        (True, True),
-        (oai.Schema.construct(), True),
-        (None, True),
-        (False, False),
-        (
-            oai.Schema.construct(type="string"),
-            StringProperty(name="AdditionalProperty", required=True, nullable=False, default=None),
-        ),
-    ],
-)
-def test_build_model_property(additional_properties_schema, expected_additional_properties):
-    from openapi_python_client.parser.properties import Schemas, build_model_property
-
-    data = oai.Schema.construct(
-        required=["req"],
-        title="MyModel",
-        properties={
-            "req": oai.Schema.construct(type="string"),
-            "opt": oai.Schema(type="string", format="date-time"),
-        },
-        description="A class called MyModel",
-        nullable=False,
-        additionalProperties=additional_properties_schema,
-    )
-    schemas = Schemas(models={"OtherModel": None})
-
-    model, new_schemas = build_model_property(
-        data=data,
-        name="prop",
-        schemas=schemas,
-        required=True,
-        parent_name="parent",
-    )
-
-    assert new_schemas != schemas
-    assert new_schemas.models == {
-        "OtherModel": None,
-        "ParentMyModel": model,
-    }
-    assert model == ModelProperty(
-        name="prop",
-        required=True,
-        nullable=False,
-        default=None,
-        reference=Reference(class_name="ParentMyModel", module_name="parent_my_model"),
-        required_properties=[StringProperty(name="req", required=True, nullable=False, default=None)],
-        optional_properties=[DateTimeProperty(name="opt", required=False, nullable=False, default=None)],
-        description=data.description,
-        relative_imports={
-            "from dateutil.parser import isoparse",
-            "from typing import cast",
-            "import datetime",
-            "from ..types import UNSET, Unset",
-            "from typing import Union",
-        },
-        additional_properties=expected_additional_properties,
-    )
-
-
-def test_build_model_property_conflict():
-    from openapi_python_client.parser.properties import Schemas, build_model_property
-
-    data = oai.Schema.construct(
-        required=["req"],
-        properties={
-            "req": oai.Schema.construct(type="string"),
-            "opt": oai.Schema(type="string", format="date-time"),
-        },
-        nullable=False,
-    )
-    schemas = Schemas(models={"OtherModel": None})
-
-    err, new_schemas = build_model_property(
-        data=data,
-        name="OtherModel",
-        schemas=schemas,
-        required=True,
-        parent_name=None,
-    )
-
-    assert new_schemas == schemas
-    assert err == PropertyError(detail='Attempted to generate duplicate models with name "OtherModel"', data=data)
-
-
-def test_build_model_property_bad_prop():
-    from openapi_python_client.parser.properties import Schemas, build_model_property
-
-    data = oai.Schema(
-        properties={
-            "bad": oai.Schema(type="not_real"),
-        },
-    )
-    schemas = Schemas(models={"OtherModel": None})
-
-    err, new_schemas = build_model_property(
-        data=data,
-        name="prop",
-        schemas=schemas,
-        required=True,
-        parent_name=None,
-    )
-
-    assert new_schemas == schemas
-    assert err == PropertyError(detail="unknown type not_real", data=oai.Schema(type="not_real"))
-
-
-def test_build_model_property_bad_additional_props():
-    from openapi_python_client.parser.properties import Schemas, build_model_property
-
-    additional_properties = oai.Schema(
-        type="object",
-        properties={
-            "bad": oai.Schema(type="not_real"),
-        },
-    )
-    data = oai.Schema(additionalProperties=additional_properties)
-    schemas = Schemas(models={"OtherModel": None})
-
-    err, new_schemas = build_model_property(
-        data=data,
-        name="prop",
-        schemas=schemas,
-        required=True,
-        parent_name=None,
-    )
-
-    assert new_schemas == schemas
-    assert err == PropertyError(detail="unknown type not_real", data=oai.Schema(type="not_real"))
 
 
 def test_build_enum_property_conflict(mocker):
