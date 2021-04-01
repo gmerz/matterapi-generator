@@ -49,7 +49,11 @@ class EndpointCollection:
                 operation: Optional[oai.Operation] = getattr(path_data, method)
                 if operation is None:
                     continue
-                tag = utils.snake_case((operation.tags or ["default"])[0])
+
+                tags = operation.tags or ["default"]
+                tag_name = tags[0]
+                tag = utils.snake_case(tag_name)
+    
                 collection = endpoints_by_tag.setdefault(tag, EndpointCollection(tag=tag))
                 endpoint, schemas = Endpoint.from_data(
                     data=operation, path=path, method=method, tag=tag, schemas=schemas
@@ -64,6 +68,16 @@ class EndpointCollection:
                     error.header = f"WARNING parsing {method.upper()} {path} within {tag}."
                     collection.parse_errors.append(error)
                 collection.endpoints.append(endpoint)
+                
+                # Add multi-tag endpoints to all tags
+                for tag_name in tags[1:]:
+                    print("More tags", tag_name)
+                    tag = utils.snake_case(tag_name)
+                    endpoint_next = deepcopy(endpoint)
+                    endpoint_next.tag = tag_name
+                    collection = endpoints_by_tag.setdefault(tag, EndpointCollection(tag=tag))
+                    collection.endpoints.append(endpoint_next)
+
 
         return endpoints_by_tag, schemas
 
@@ -87,6 +101,7 @@ class Endpoint:
     path: str
     method: str
     description: Optional[str]
+    summary: Optional[str]
     name: str
     requires_security: bool
     tag: str
@@ -306,7 +321,8 @@ class Endpoint:
         endpoint = Endpoint(
             path=path,
             method=method,
-            description=utils.remove_string_escapes(data.description) if data.description else "",
+            description=utils.clean_description(utils.remove_string_escapes(data.description)) if data.description else "",
+            summary=utils.remove_string_escapes(data.summary) if data.summary else "",
             name=name,
             requires_security=bool(data.security),
             tag=tag,
@@ -332,6 +348,7 @@ class GeneratorData:
     errors: List[ParseError]
     endpoint_collections_by_tag: Dict[str, EndpointCollection]
     enums: Dict[str, EnumProperty]
+    tags: List
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> Union["GeneratorData", GeneratorError]:
@@ -365,4 +382,5 @@ class GeneratorData:
             models=schemas.models,
             errors=schemas.errors,
             enums=enums,
+            tags=openapi.tags
         )

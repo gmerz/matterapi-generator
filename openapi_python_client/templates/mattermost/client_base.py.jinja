@@ -20,8 +20,11 @@ log.setLevel(logging.INFO)
 
 
 class ClientOptions(BaseModel):
+    """ Options for the http client """
     timeout: Optional[float] = 10.0
+    """ Timeout for operations """
     verify: Union[bool, Any] = True
+    """ If and how TLS should be verified. """
     cert: Optional[Any]
     proxies: Optional[Dict]
     auth: Optional[Any]

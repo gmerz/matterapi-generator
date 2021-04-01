@@ -66,3 +66,38 @@ def to_valid_python_identifier(value: str) -> str:
         return new_value
 
     return f"{FIELD_PREFIX}{new_value}"
+
+
+def clean_description(description):
+    if not description:
+        return description
+    regex_perm = '#+\s*Permissions\s+(\S[^\n]+)\n'
+    regex_version = '__Minimum server version_*: ([^_\s]*)_*\s'
+    regex_local = '__Local mode only_*:_*:* ([^\n]*)_*\n'
+    regex_note = '__Note_*:_*:* ([^\n]*)_*\n'
+    repl_perms = re.findall(regex_perm, description)
+    repl_version = re.findall(regex_version, description)
+    repl_note = re.findall(regex_note, description)
+    repl_local = re.findall(regex_local, description)
+    description = re.sub(regex_perm,"", description,flags=re.S)
+    description = re.sub(regex_version,"", description,flags=re.S)
+    description = re.sub(regex_note,"", description,flags=re.S)
+    description = re.sub(regex_local,"", description,flags=re.S)
+    description = re.sub("\n\n+","\n\n", description,flags=re.S)
+    description = description.strip() + '\n'
+
+    if repl_perms:
+        description += f'\nPermissions:\n    {repl_perms[0]}'
+    if repl_version:
+        description += f'\nMinimum Server Version:\n    {repl_version[0]}'
+    if repl_local:
+        description += f'\nLocal Mode Only:\n    {repl_local[0]}'
+    # Additional newline before warning to make sphinx happy
+    if repl_note:
+        description += f'\n\nWarning:\n    {repl_note[0]}'
+    
+    description += '\n\n'
+    return description
+
+
+

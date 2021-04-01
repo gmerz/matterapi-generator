@@ -47,7 +47,8 @@ class EnumProperty(Property):
             back to the root of the generated client.
         """
         imports = super().get_imports(prefix=prefix)
-        imports.add(f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}")
+        #imports.add(f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}")
+        imports.add(f"from {prefix}enums import {self.reference.class_name}")
         return imports
 
     @staticmethod

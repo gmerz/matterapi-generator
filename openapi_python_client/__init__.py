@@ -11,12 +11,16 @@ from typing import Any, Dict, Optional, Sequence, Union
 import httpcore
 import httpx
 import yaml
+import json
+import re
+import textwrap
 from jinja2 import BaseLoader, ChoiceLoader, Environment, FileSystemLoader, PackageLoader
+from collections import defaultdict
 
 from openapi_python_client import utils
 
 from .parser import GeneratorData, import_string_from_reference
-from .parser.errors import GeneratorError
+from .parser.errors import GeneratorError , ErrorLevel
 from .utils import snake_case
 
 if sys.version_info.minor < 8:  # version did not exist before 3.8, need to use a backport
@@ -39,6 +43,7 @@ TEMPLATE_FILTERS = {
     "pascalcase": utils.pascal_case,
     "any": any,
 }
+
 
 
 class Project:
@@ -84,6 +89,7 @@ class Project:
         self.version: str = self.package_version_override or openapi.version
 
         self.env.filters.update(TEMPLATE_FILTERS)
+        self.errors = []
 
     def build(self) -> Sequence[GeneratorError]:
         """ Create the project from templates """
@@ -96,10 +102,12 @@ class Project:
                 self.project_dir.mkdir()
             except FileExistsError:
                 return [GeneratorError(detail="Directory already exists. Delete it or use the update command.")]
+        self._build_doc()
         self._build_metadata()
         self._build_track_file()
         self._create_package()
-        self._build_models()
+#        self._build_models()
+        self._build_models_file()
         self._build_api()
 #        self._build_api_modules()
         self._reformat()
@@ -111,10 +119,12 @@ class Project:
         if not self.package_dir.is_dir():
             raise FileNotFoundError()
         print(f"Updating {self.package_name}")
+        self._build_doc()
         shutil.rmtree(self.package_dir)
         self._build_track_file()
         self._create_package()
-        self._build_models()
+        #self._build_models()
+        self._build_models_file()
         self._build_api()
 #        self._build_api_modules()
         self._reformat()
@@ -138,7 +148,7 @@ class Project:
         subprocess.run("black .", cwd=self.project_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def _get_errors(self) -> Sequence[GeneratorError]:
-        errors = []
+        errors = self.errors
         for collection in self.openapi.endpoint_collections_by_tag.values():
             errors.extend(collection.parse_errors)
         errors.extend(self.openapi.errors)
@@ -247,6 +257,50 @@ class Project:
         models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
 
 
+    def _build_models_file(self) -> None:
+        # Generate models
+        models_dir = self.package_dir
+        #models_dir.mkdir()
+        models_file = models_dir / "models.py"
+#        imports = []
+
+        model_template = self.env.get_template("models.py.jinja")
+        models = self.openapi.models.values()
+        models_properties = []
+        for model in models:
+            file_properties = []
+            for prop in model.required_properties:
+                if isinstance(prop, FileProperty):
+                    file_properties.append(prop.python_name)
+            for prop in model.optional_properties:
+                if isinstance(prop, FileProperty):
+                    file_properties.append(prop.python_name)
+            models_properties.append( (model, file_properties) )
+
+        models_file.write_text(model_template.render(models=models_properties), encoding=self.file_encoding)
+
+        # Generate enums
+        enums_template = self.env.get_template("enums.py.jinja")
+#        str_enum_template = self.env.get_template("str_enum.py.jinja")
+#        int_enum_template = self.env.get_template("int_enum.py.jinja")
+        str_enums = []
+        int_enums = []
+        for enum in self.openapi.enums.values():
+            if enum.value_type is int:
+                int_enums.append(enum)
+            else:
+                str_enums.append(enum)
+            #imports.append(import_string_from_reference(enum.reference))
+            
+        module_path = models_dir / f"enums.py"
+        module_path.write_text(enums_template.render(int_enums=int_enums, str_enums=str_enums), encoding=self.file_encoding)
+
+#        models_init_template = self.env.get_template("models_init.py.jinja")
+#        models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
+
+
+
+
     def _build_track_file(self) -> None:
         # Generate File to track api endpoints and identify changes on upgrade
         track_file = self.project_dir / "operations"
@@ -280,15 +334,34 @@ class Project:
 #        api_init = endpoint_sync_dir / "__init__.py"
 #        api_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
 
-
         endpoint_sync_template = self.env.get_template("mattermost/endpoint_class_sync.py.jinja")
         endpoint_async_template = self.env.get_template("mattermost/endpoint_class_async.py.jinja")
-        
+
+        oidmapping = defaultdict(dict)
+        oidmapping_file = Path('operationid_mapping.json')
+        if oidmapping_file.exists():
+            with oidmapping_file.open() as mapfile:
+                oidmapping = json.loads(mapfile.read())
+
         tags = list()
+        imports = []
+        api_classes = []
+
+        tag_map = { snake_case(x.name) : utils.clean_description(x.description) for x in self.openapi.tags }
+        tag_map['authentication'] = "Endpoint related to authentication operations"
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
             tags.append(tag)
             for endpoint in collection.endpoints:
-
+                # Cleanup some things in the description
+                #endpoint.description = self._clean_description(endpoint.description)
+                oldoid = oidmapping[endpoint.path].get(endpoint.method, None)
+                if oldoid:
+                    if endpoint.name != oldoid:
+                        self.errors.append( GeneratorError(detail=f'Operation ids for path `{endpoint.method.upper()} - {endpoint.path}` do not match. New: `{endpoint.name}`, Old: `{oldoid}`. Using old one. Update the mapping file if necessary', level=ErrorLevel.WARNING ))
+                    endpoint.name = oldoid
+                else: 
+                    oidmapping[endpoint.path][endpoint.method] = endpoint.name
+                    self.errors.append( GeneratorError(detail=f'New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct', level=ErrorLevel.WARNING ))
                 # Hack to filter out duplicate 'None' responses and make the ordering for generated return types stable
                 response_types = set()
                 for response in endpoint.responses:
@@ -302,11 +375,19 @@ class Project:
 
 
             endpoint_sync_path = endpoint_sync_dir / f"{snake_case(tag)}.py"
-            endpoint_sync_path.write_text(endpoint_sync_template.render(tag=utils.pascal_case(tag),collection=collection), encoding=self.file_encoding)
+            endpoint_sync_path.write_text(endpoint_sync_template.render(tag=utils.pascal_case(tag),collection=collection,description=tag_map.setdefault(snake_case(tag))), encoding=self.file_encoding)
 
             endpoint_async_path = endpoint_async_dir / f"{snake_case(tag)}.py"
-            endpoint_async_path.write_text(endpoint_async_template.render(tag=utils.pascal_case(tag),collection=collection), encoding=self.file_encoding)
+            endpoint_async_path.write_text(endpoint_async_template.render(tag=utils.pascal_case(tag),collection=collection,description=tag_map.setdefault(snake_case(tag),'')), encoding=self.file_encoding)
 
+            imports.append(f'from .{snake_case(tag)} import {utils.pascal_case(tag)}Api')
+            api_classes.append(f'{utils.pascal_case(tag)}Api')
+
+        init_template = self.env.get_template("mattermost/endpoint_init.py.jinja")
+        endpoint_init = endpoint_sync_dir / "__init__.py"
+        endpoint_init.write_text(init_template.render(imports=imports,api_classes=api_classes), encoding=self.file_encoding)
+        endpoint_init = endpoint_async_dir / "__init__.py"
+        endpoint_init.write_text(init_template.render(imports=imports,api_classes=api_classes), encoding=self.file_encoding)
 
         driver_dir = self.package_dir / "driver"
         driver_dir.mkdir()
@@ -331,6 +412,43 @@ class Project:
         driver_sync_path = driver_dir / "async_driver.py"
         driver_sync_template = self.env.get_template("mattermost/driver_async.py.jinja")
         driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
+
+        with oidmapping_file.open('w') as mapfile:
+            mapfile.write(json.dumps(oidmapping,indent=4))
+
+
+
+    def _build_doc(self) -> None:
+        # Generate parts of the doc
+
+        doc_dir = self.project_dir / "docs" / "source"
+#        doc_dir.mkdir()
+
+        endpoint_dir = doc_dir / "endpoints"
+        endpoint_template = self.env.get_template("mattermost/doc/endpoint.rst.jinja")
+
+        tags = []
+        for tag in self.openapi.endpoint_collections_by_tag:
+            tags.append(tag)
+
+            endpoint_sync_path = endpoint_dir / f"sync_{snake_case(tag)}.rst"
+            endpoint_sync_path.write_text(endpoint_template.render(tag=utils.pascal_case(tag),path='matterapi.endpoints.sync_api'), encoding=self.file_encoding)
+
+            endpoint_async_path = endpoint_dir / f"async_{snake_case(tag)}.rst"
+            endpoint_async_path.write_text(endpoint_template.render(tag=utils.pascal_case(tag),path='matterapi.endpoints.async_api'), encoding=self.file_encoding)
+
+        
+        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_index.rst.jinja")
+        endpoint_index_path = endpoint_dir / f"async_index.rst"
+        endpoint_index_path.write_text(endpoint_index_template.render(tags=tags, prefix='async'), encoding=self.file_encoding)
+        endpoint_index_path = endpoint_dir / f"sync_index.rst"
+        endpoint_index_path.write_text(endpoint_index_template.render(tags=tags, prefix='sync'), encoding=self.file_encoding)
+
+        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_toc.rst.jinja")
+        endpoint_index_path = endpoint_dir / f"index.rst"
+        endpoint_index_path.write_text(endpoint_index_template.render(), encoding=self.file_encoding)
+
+
 
             
     def _build_api_modules(self) -> None:

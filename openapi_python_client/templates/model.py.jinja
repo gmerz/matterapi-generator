@@ -20,27 +20,44 @@ T = TypeVar("T", bound="{{ model.reference.class_name }}")
 #}
 class {{ model.reference.class_name }}(BaseConfig):
     """ {{ model.description }} """
+
     {% for property in model.required_properties + model.optional_properties %}
     {% if property.default is none and property.required %}
-    {{ property.to_string() }}
+    {{ property.to_string() | indent(4) }}
+    {% if property.description %}
+    """ {{property.description}} """
+    {% endif %}
     {% endif %}
     {% endfor %}
     {% for property in model.required_properties + model.optional_properties %}
     {% if property.default is not none or not property.required %}
-    {{ property.to_string() }}
+    {{ property.to_string() | indent(4) }}
+    {% if property.description %}
+    """ {{property.description}} """
+    {% endif %}
     {% endif %}
   {% endfor %}
 
 
     {% if file_properties %}
-    file_properties: ClassVar[Set[str]] = set({{ file_properties }})
+    _file_properties: ClassVar[Set[str]] = set({{ file_properties }})
+    """Properties to be included into `files` parameter of request"""
     
     class Config:
+        """Pydantic configuration for the model
+
+        :meta private:
+        """
+
         arbitrary_types_allowed = True
 
     def get_files(self):
+        """Get the `files` attributes for the request from the model
+
+        :meta private:
+        """
         response = {}
-        file_props = self.dict(include=self.file_properties, exclude_none=True)
+        file_props = self.dict(include=self._file_properties, exclude_none=True)
         for name, value in file_props.items():
             if isinstance(value, dict):
                 response.update(value)
@@ -49,7 +66,11 @@ class {{ model.reference.class_name }}(BaseConfig):
         return response
 
     def get_data(self):
-        return self.dict(exclude=self.file_properties,exclude_none=True)
+        """Get the `data` attributes for the request from the model
+
+        :meta private:
+        """
+        return self.dict(exclude=self._file_properties,exclude_none=True)
     {% endif %}
 
 

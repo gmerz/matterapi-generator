@@ -2,6 +2,7 @@ from itertools import chain
 from typing import Any, ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
 import attr
+import re
 
 from ... import schema as oai
 from ... import utils
@@ -489,6 +490,7 @@ def _property_from_data(
     return PropertyError(data=data, detail=f"unknown type {data.type}"), schemas
 
 
+
 def property_from_data(
     *,
     name: str,
@@ -497,6 +499,8 @@ def property_from_data(
     schemas: Schemas,
     parent_name: str,
 ) -> Tuple[Union[Property, PropertyError], Schemas]:
+    if 'description' in data.__dict__:
+        data.description = utils.clean_description(data.description)
     try:
         return _property_from_data(name=name, required=required, data=data, schemas=schemas, parent_name=parent_name)
     except ValidationError:

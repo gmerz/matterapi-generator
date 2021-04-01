@@ -53,7 +53,8 @@ class ModelProperty(Property):
         imports = super().get_imports(prefix=prefix)
         imports.update(
             {
-                f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}",
+               # f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}",
+                f"from {prefix}models import {self.reference.class_name}",
                 "from typing import Dict",
                 "from typing import cast",
             }
@@ -132,7 +133,7 @@ def _process_properties(*, data: oai.Schema, schemas: Schemas, class_name: str) 
             required_properties.append(prop)
         else:
             optional_properties.append(prop)
-        relative_imports.update(prop.get_imports(prefix=".."))
+        relative_imports.update(prop.get_imports(prefix="."))
 
     return _PropertyData(
         optional_props=optional_properties,
@@ -195,7 +196,7 @@ def build_model_property(
         schema_additional=data.additionalProperties, schemas=schemas, class_name=class_name
     )
     if isinstance(additional_properties, Property):
-        property_data.relative_imports.update(additional_properties.get_imports(prefix=".."))
+        property_data.relative_imports.update(additional_properties.get_imports(prefix="."))
     elif isinstance(additional_properties, PropertyError):
         return additional_properties, schemas
 
