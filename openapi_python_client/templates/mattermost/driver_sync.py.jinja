@@ -6,6 +6,7 @@ from .base import BaseDriver,AuthToken, AuthLogin
 from .client import SyncClient, SyncAuthenticatedClient
 from ..models import User
 
+from pydantic import PrivateAttr
 
 {% for tag in tags: %}
 from ..endpoints.sync_api.{{tag | snakecase}} import {{tag | pascalcase}}Api
@@ -14,8 +15,8 @@ from ..endpoints.sync_api.{{tag | snakecase}} import {{tag | pascalcase}}Api
 class SyncDriver(BaseDriver):
     """ Synchronous mattermost api driver implementation """
  
-    _client : Optional[Union[SyncClient,SyncAuthenticatedClient]]
-    """ The underlying Client which handles requests to the api """
+    _client : Optional[Union[SyncClient,SyncAuthenticatedClient]] = PrivateAttr(None)
+    """ The underlying client which handles requests to the api """
 
     def login(self):
         """

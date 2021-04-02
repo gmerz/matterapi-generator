@@ -2,6 +2,8 @@ from typing import Optional, Union
 
 import httpx
 
+from pydantic import PrivateAttr
+
 from .base import BaseDriver,AuthToken, AuthLogin
 from .client import AsyncClient, AsyncAuthenticatedClient
 from ..models import User
@@ -14,7 +16,7 @@ from ..endpoints.async_api.{{tag | snakecase}} import {{tag | pascalcase}}Api
 class AsyncDriver(BaseDriver):
     """ Asynchronous mattermost api driver implementation """
  
-    _client : Optional[Union[AsyncClient,AsyncAuthenticatedClient]]
+    _client : Optional[Union[AsyncClient,AsyncAuthenticatedClient]] = PrivateAttr(None)
     """ The underlying Client which handles requests to the api """
 
     async def login(self):
