@@ -20,8 +20,8 @@ RESERVED_WORDS = set(dir(builtins)).union({"self"})
 
 
 def fix_reserved_words(value: str) -> str:
-    if value in RESERVED_WORDS:
-        return f"{value}_"
+    #if value in RESERVED_WORDS:
+    #    return f"{value}_"
     return value
 
 
