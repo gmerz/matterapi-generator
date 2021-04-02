@@ -1,0 +1,1006 @@
+{
+    "/users/login": {
+        "post": "Login"
+    },
+    "/users/login/cws": {
+        "post": "LoginCwsToken"
+    },
+    "/users/logout": {
+        "post": "Logout"
+    },
+    "/users": {
+        "get": "GetUsers",
+        "post": "CreateUser",
+        "delete": "PermanentDeleteAllUsers"
+    },
+    "/users/ids": {
+        "post": "GetUsersByIds"
+    },
+    "/users/group_channels": {
+        "post": "GetUsersByGroupChannels"
+    },
+    "/users/usernames": {
+        "post": "GetUsersByUsernames"
+    },
+    "/users/search": {
+        "post": "SearchUsers"
+    },
+    "/users/autocomplete": {
+        "get": "AutocompleteUsers"
+    },
+    "/users/known": {
+        "get": "GetKnownUsers"
+    },
+    "/users/stats": {
+        "get": "GetTotalCountOfUsersInSystem"
+    },
+    "/users/stats/filtered": {
+        "get": "GetTotalCountOfUsersInSystemMatchingFilters"
+    },
+    "/users/{user_id}": {
+        "get": "GetUser",
+        "put": "UpdateUser",
+        "delete": "DeactivateUserAccount"
+    },
+    "/users/{user_id}/patch": {
+        "put": "PatchUser"
+    },
+    "/users/{user_id}/roles": {
+        "put": "UpdateUserRoles"
+    },
+    "/users/{user_id}/active": {
+        "put": "UpdateUserActiveStatus"
+    },
+    "/users/{user_id}/image": {
+        "get": "GetUserProfileImage",
+        "post": "SetUserProfileImage",
+        "delete": "DeleteUserProfileImage"
+    },
+    "/users/{user_id}/image/default": {
+        "get": "ReturnUserDefaultProfileImage"
+    },
+    "/users/username/{username}": {
+        "get": "GetUserByUsername"
+    },
+    "/users/password/reset": {
+        "post": "ResetPassword"
+    },
+    "/users/{user_id}/mfa": {
+        "put": "UpdateUserMfa"
+    },
+    "/users/{user_id}/mfa/generate": {
+        "post": "GenerateMfaSecret"
+    },
+    "/users/{user_id}/demote": {
+        "post": "DemoteUserToGuest"
+    },
+    "/users/{user_id}/promote": {
+        "post": "PromoteGuestToUser"
+    },
+    "/users/mfa": {
+        "post": "CheckMfa"
+    },
+    "/users/{user_id}/password": {
+        "put": "UpdateUserPassword"
+    },
+    "/users/password/reset/send": {
+        "post": "SendPasswordResetEmail"
+    },
+    "/users/email/{email}": {
+        "get": "GetUserByEmail"
+    },
+    "/users/{user_id}/sessions": {
+        "get": "GetUserSessions"
+    },
+    "/users/{user_id}/sessions/revoke": {
+        "post": "RevokeUserSession"
+    },
+    "/users/{user_id}/sessions/revoke/all": {
+        "post": "RevokeAllUserSessions"
+    },
+    "/users/sessions/device": {
+        "put": "AttachMobileDevice"
+    },
+    "/users/{user_id}/audits": {
+        "get": "GetUserAudits"
+    },
+    "/users/{user_id}/email/verify/member": {
+        "post": "VerifyUserEmailWithoutToken"
+    },
+    "/users/email/verify": {
+        "post": "VerifyUserEmail"
+    },
+    "/users/email/verify/send": {
+        "post": "SendVerificationEmail"
+    },
+    "/users/login/switch": {
+        "post": "SwitchLoginMethod"
+    },
+    "/users/{user_id}/tokens": {
+        "get": "GetUserAccessTokensForUser",
+        "post": "CreateUserAccessToken"
+    },
+    "/users/tokens": {
+        "get": "GetUserAccessTokens"
+    },
+    "/users/tokens/revoke": {
+        "post": "RevokeUserAccessToken"
+    },
+    "/users/tokens/{token_id}": {
+        "get": "GetUserAccessToken"
+    },
+    "/users/tokens/disable": {
+        "post": "DisablePersonalAccessToken"
+    },
+    "/users/tokens/enable": {
+        "post": "EnablePersonalAccessToken"
+    },
+    "/users/tokens/search": {
+        "post": "SearchUserAccessTokens"
+    },
+    "/users/{user_id}/auth": {
+        "put": "UpdateUserAuthenticationMethod"
+    },
+    "/users/{user_id}/terms_of_service": {
+        "get": "GetUserTermsOfService",
+        "post": "RegisterTermsOfServiceAction"
+    },
+    "/users/sessions/revoke/all": {
+        "post": "RevokeSessionsFromAllUsers"
+    },
+    "/users/{user_id}/typing": {
+        "post": "PublishUserTyping"
+    },
+    "/users/{user_id}/uploads": {
+        "get": "GetUploadsForUser"
+    },
+    "/users/migrate_auth/ldap": {
+        "post": "MigrateAuthToLdap"
+    },
+    "/users/migrate_auth/saml": {
+        "post": "MigrateAuthToSaml"
+    },
+    "/users/{user_id}/convert_to_bot": {
+        "post": "ConvertUserToBot"
+    },
+    "/bots": {
+        "get": "GetBots",
+        "post": "CreateBot"
+    },
+    "/bots/{bot_user_id}": {
+        "get": "GetBot",
+        "put": "PatchBot"
+    },
+    "/bots/{bot_user_id}/disable": {
+        "post": "DisableBot"
+    },
+    "/bots/{bot_user_id}/enable": {
+        "post": "EnableBot"
+    },
+    "/bots/{bot_user_id}/assign/{user_id}": {
+        "post": "AssignBotToUser"
+    },
+    "/bots/{bot_user_id}/icon": {
+        "get": "GetBotIcon",
+        "post": "SetBotIcon",
+        "delete": "DeleteBotIcon"
+    },
+    "/bots/{bot_user_id}/convert_to_user": {
+        "post": "ConvertBotToUser"
+    },
+    "/users/{user_id}/teams/{team_id}/threads": {
+        "get": "GetUserThreads"
+    },
+    "/users/{user_id}/teams/{team_id}/threads/mention_counts": {
+        "get": "GetThreadMentionsForUserPerChannel"
+    },
+    "/users/{user_id}/teams/{team_id}/threads/read": {
+        "put": "MarkThreadsReadForUser"
+    },
+    "/users/{user_id}/teams/{team_id}/threads/{thread_id}/read/{timestamp}": {
+        "put": "MarkThreadReadForUser"
+    },
+    "/users/{user_id}/teams/{team_id}/threads/{thread_id}/following": {
+        "put": "StartFollowingThread",
+        "delete": "StopFollowingThread"
+    },
+    "/users/{user_id}/teams/{team_id}/threads/{thread_id}": {
+        "get": "GetUserThread"
+    },
+    "/users/{user_id}/status": {
+        "get": "GetUserStatus",
+        "put": "UpdateUserStatus"
+    },
+    "/users/status/ids": {
+        "post": "GetUserStatusesById"
+    },
+    "/users/{user_id}/status/custom": {
+        "put": "UpdateUserCustomStatus",
+        "delete": "DeleteUserCustomStatus"
+    },
+    "/users/{user_id}/status/custom/recent": {
+        "delete": "DeleteUserRecentCustomStatus"
+    },
+    "/teams": {
+        "get": "GetTeams",
+        "post": "CreateTeam"
+    },
+    "/teams/{team_id}": {
+        "get": "GetTeam",
+        "put": "UpdateTeam",
+        "delete": "DeleteTeam"
+    },
+    "/teams/{team_id}/patch": {
+        "put": "PatchTeam"
+    },
+    "/teams/{team_id}/privacy": {
+        "put": "UpdateTeamPrivacy"
+    },
+    "/teams/{team_id}/restore": {
+        "post": "RestoreTeam"
+    },
+    "/teams/name/{name}": {
+        "get": "GetTeamByName"
+    },
+    "/teams/search": {
+        "post": "SearchTeams"
+    },
+    "/teams/name/{name}/exists": {
+        "get": "CheckTeamExists"
+    },
+    "/users/{user_id}/teams": {
+        "get": "GetUserTeams"
+    },
+    "/teams/{team_id}/members": {
+        "get": "GetTeamMembers",
+        "post": "AddTeamMember"
+    },
+    "/teams/members/invite": {
+        "post": "AddTeamMemberFromInvite"
+    },
+    "/teams/{team_id}/members/batch": {
+        "post": "AddTeamMembers"
+    },
+    "/users/{user_id}/teams/members": {
+        "get": "GetTeamMembersForUser"
+    },
+    "/teams/{team_id}/members/{user_id}": {
+        "get": "GetTeamMember",
+        "delete": "RemoveTeamMember"
+    },
+    "/teams/{team_id}/members/ids": {
+        "post": "GetTeamMembersByIds"
+    },
+    "/teams/{team_id}/stats": {
+        "get": "GetTeamStats"
+    },
+    "/teams/{team_id}/regenerate_invite_id": {
+        "post": "RegenerateTeamInviteId"
+    },
+    "/teams/{team_id}/image": {
+        "get": "GetTeamIcon",
+        "post": "SetTeamIcon",
+        "delete": "RemoveTeamIcon"
+    },
+    "/teams/{team_id}/members/{user_id}/roles": {
+        "put": "UpdateTeamMemberRoles"
+    },
+    "/teams/{team_id}/members/{user_id}/schemeRoles": {
+        "put": "UpdateSchemeDerivedRolesOfMember"
+    },
+    "/users/{user_id}/teams/unread": {
+        "get": "GetTeamsUnreadForUser"
+    },
+    "/users/{user_id}/teams/{team_id}/unread": {
+        "get": "GetUnreadsForTeam"
+    },
+    "/teams/{team_id}/invite/email": {
+        "post": "InviteUsersToTeamByEmail"
+    },
+    "/teams/{team_id}/invite-guests/email": {
+        "post": "InviteGuestsToTeamByEmail"
+    },
+    "/teams/invites/email": {
+        "delete": "InvalidateActiveEmailInvitations"
+    },
+    "/teams/{team_id}/import": {
+        "post": "ImportTeam"
+    },
+    "/teams/invite/{invite_id}": {
+        "get": "GetInviteInfoForTeam"
+    },
+    "/teams/{team_id}/scheme": {
+        "put": "SetTeamScheme"
+    },
+    "/teams/{team_id}/members_minus_group_members": {
+        "get": "GetTeamMembersMinusGroupMembers"
+    },
+    "/teams/{team_id}/files/search": {
+        "post": "SearchFilesInTeam"
+    },
+    "/channels": {
+        "get": "GetChannels",
+        "post": "CreateChannel"
+    },
+    "/channels/direct": {
+        "post": "CreateDirectMessageChannel"
+    },
+    "/channels/group": {
+        "post": "CreateGroupMessageChannel"
+    },
+    "/channels/search": {
+        "post": "SearchChannelsAcrossTeams"
+    },
+    "/channels/group/search": {
+        "post": "SearchGroupChannels"
+    },
+    "/teams/{team_id}/channels/ids": {
+        "post": "GetChannelsByIds"
+    },
+    "/channels/{channel_id}/timezones": {
+        "get": "GetChannelTimezones"
+    },
+    "/channels/{channel_id}": {
+        "get": "GetChannel",
+        "put": "UpdateChannel",
+        "delete": "DeleteChannel"
+    },
+    "/channels/{channel_id}/patch": {
+        "put": "PatchChannel"
+    },
+    "/channels/{channel_id}/privacy": {
+        "put": "UpdateChannelPrivacy"
+    },
+    "/channels/{channel_id}/convert": {
+        "post": "ConvertChannelToPrivate"
+    },
+    "/channels/{channel_id}/restore": {
+        "post": "RestoreChannel"
+    },
+    "/channels/{channel_id}/move": {
+        "post": "MoveChannel"
+    },
+    "/channels/{channel_id}/stats": {
+        "get": "GetChannelStatistics"
+    },
+    "/channels/{channel_id}/pinned": {
+        "get": "GetChannelPinnedPosts"
+    },
+    "/teams/{team_id}/channels": {
+        "get": "GetPublicChannels"
+    },
+    "/teams/{team_id}/channels/private": {
+        "get": "GetPrivateChannels"
+    },
+    "/teams/{team_id}/channels/deleted": {
+        "get": "GetDeletedChannels"
+    },
+    "/teams/{team_id}/channels/autocomplete": {
+        "get": "AutocompleteChannels"
+    },
+    "/teams/{team_id}/channels/search_autocomplete": {
+        "get": "AutocompleteChannelsForSearch"
+    },
+    "/teams/{team_id}/channels/search": {
+        "post": "SearchChannels"
+    },
+    "/teams/{team_id}/channels/search_archived": {
+        "post": "SearchArchivedChannels"
+    },
+    "/teams/{team_id}/channels/name/{channel_name}": {
+        "get": "GetChannelByName"
+    },
+    "/teams/name/{team_name}/channels/name/{channel_name}": {
+        "get": "GetChannelByNameForTeamName"
+    },
+    "/channels/{channel_id}/members": {
+        "get": "GetChannelMembers",
+        "post": "AddChannelMember"
+    },
+    "/channels/{channel_id}/members/ids": {
+        "post": "GetChannelMembersByIds"
+    },
+    "/channels/{channel_id}/members/{user_id}": {
+        "get": "GetChannelMember",
+        "delete": "RemoveUserFromChannel"
+    },
+    "/channels/{channel_id}/members/{user_id}/roles": {
+        "put": "UpdateChannelRoles"
+    },
+    "/channels/{channel_id}/members/{user_id}/schemeRoles": {
+        "put": "UpdateSchemeDerivedRolesOfChannelMember"
+    },
+    "/channels/{channel_id}/members/{user_id}/notify_props": {
+        "put": "UpdateChannelNotifications"
+    },
+    "/channels/members/{user_id}/view": {
+        "post": "ViewChannel"
+    },
+    "/users/{user_id}/teams/{team_id}/channels/members": {
+        "get": "GetChannelMembershipsForUser"
+    },
+    "/users/{user_id}/teams/{team_id}/channels": {
+        "get": "GetChannelsForTeamForUser"
+    },
+    "/users/{user_id}/channels/{channel_id}/unread": {
+        "get": "GetChannelUnread"
+    },
+    "/channels/{channel_id}/scheme": {
+        "put": "UpdateChannelScheme"
+    },
+    "/channels/{channel_id}/members_minus_group_members": {
+        "get": "ChannelMembersMinusGroupMembers"
+    },
+    "/channels/{channel_id}/member_counts_by_group": {
+        "get": "ChannelMembersCountsByGroup"
+    },
+    "/channels/{channel_id}/moderations": {
+        "get": "GetChannelModerationInformation"
+    },
+    "/channels/{channel_id}/moderations/patch": {
+        "put": "UpdateChannelModerationSettings"
+    },
+    "/users/{user_id}/teams/{team_id}/channels/categories": {
+        "get": "GetUserSidebarCategories",
+        "put": "UpdateUserSidebarCategories",
+        "post": "CreateUserSidebarCategory"
+    },
+    "/users/{user_id}/teams/{team_id}/channels/categories/order": {
+        "get": "GetUserSidebarCategoryOrder",
+        "put": "UpdateUserSidebarCategoryOrder"
+    },
+    "/users/{user_id}/teams/{team_id}/channels/categories/{category_id}": {
+        "get": "GetSidebarCategory",
+        "put": "UpdateSidebarCategory",
+        "delete": "DeleteSidebarCategory"
+    },
+    "/posts": {
+        "post": "CreatePost"
+    },
+    "/posts/ephemeral": {
+        "post": "CreatePostEphemeral"
+    },
+    "/posts/{post_id}": {
+        "get": "GetPost",
+        "put": "UpdatePost",
+        "delete": "DeletePost"
+    },
+    "/users/{user_id}/posts/{post_id}/set_unread": {
+        "post": "MarkAsUnreadFromPost"
+    },
+    "/posts/{post_id}/patch": {
+        "put": "PatchPost"
+    },
+    "/posts/{post_id}/thread": {
+        "get": "GetThread"
+    },
+    "/users/{user_id}/posts/flagged": {
+        "get": "GetFlaggedPosts"
+    },
+    "/posts/{post_id}/files/info": {
+        "get": "GetFileInfoForPost"
+    },
+    "/channels/{channel_id}/posts": {
+        "get": "GetPostsForChannel"
+    },
+    "/users/{user_id}/channels/{channel_id}/posts/unread": {
+        "get": "GetPostsAroundOldestUnread"
+    },
+    "/teams/{team_id}/posts/search": {
+        "post": "SearchForTeamPosts"
+    },
+    "/posts/{post_id}/pin": {
+        "post": "PinPostToChannel"
+    },
+    "/posts/{post_id}/unpin": {
+        "post": "UnpinPostToChannel"
+    },
+    "/posts/{post_id}/actions/{action_id}": {
+        "post": "PerformPostAction"
+    },
+    "/users/{user_id}/preferences": {
+        "get": "GetUserPreferences",
+        "put": "SaveUserPreferences"
+    },
+    "/users/{user_id}/preferences/delete": {
+        "post": "DeleteUserPreferences"
+    },
+    "/users/{user_id}/preferences/{category}": {
+        "get": "GetUserPreferencesByCategory"
+    },
+    "/users/{user_id}/preferences/{category}/name/{preference_name}": {
+        "get": "GetSpecificUserPreference"
+    },
+    "/files": {
+        "post": "UploadFile"
+    },
+    "/files/{file_id}": {
+        "get": "GetFile"
+    },
+    "/files/{file_id}/thumbnail": {
+        "get": "GetFileThumbnail"
+    },
+    "/files/{file_id}/preview": {
+        "get": "GetFilePreview"
+    },
+    "/files/{file_id}/link": {
+        "get": "GetPublicFileLink"
+    },
+    "/files/{file_id}/info": {
+        "get": "GetMetadataForFile"
+    },
+    "/files/{file_id}/public": {
+        "get": "GetPublicFile"
+    },
+    "/uploads": {
+        "post": "CreateUpload"
+    },
+    "/uploads/{upload_id}": {
+        "get": "GetUploadSession",
+        "post": "PerformFileUpload"
+    },
+    "/jobs": {
+        "get": "GetJobs",
+        "post": "CreateNewJob"
+    },
+    "/jobs/{job_id}": {
+        "get": "GetJob"
+    },
+    "/jobs/{job_id}/download": {
+        "get": "DownloadJobResults"
+    },
+    "/jobs/{job_id}/cancel": {
+        "post": "CancelJob"
+    },
+    "/jobs/type/{type}": {
+        "get": "GetJobsOfGivenType"
+    },
+    "/system/timezones": {
+        "get": "GetSupportedTimezones"
+    },
+    "/system/ping": {
+        "get": "GetPingWithServerStatus"
+    },
+    "/system/notices/{teamId}": {
+        "get": "GetNotices"
+    },
+    "/system/notices/view": {
+        "put": "MarkNoticesViewed"
+    },
+    "/database/recycle": {
+        "post": "DatabaseRecycle"
+    },
+    "/email/test": {
+        "post": "TestEmail"
+    },
+    "/site_url/test": {
+        "post": "TestSiteUrl"
+    },
+    "/file/s3_test": {
+        "post": "TestS3Connection"
+    },
+    "/config": {
+        "get": "GetConfig",
+        "put": "UpdateConfig"
+    },
+    "/config/reload": {
+        "post": "ReloadConfig"
+    },
+    "/config/client": {
+        "get": "GetConfigClient"
+    },
+    "/config/environment": {
+        "get": "GetConfigEnvVariables"
+    },
+    "/config/patch": {
+        "put": "PatchConfig"
+    },
+    "/config/migrate": {
+        "post": "MigrateConfig"
+    },
+    "/license": {
+        "post": "UploadLicenseFile",
+        "delete": "RemoveLicenseFile"
+    },
+    "/license/client": {
+        "get": "GetClientLicense"
+    },
+    "/license/renewal": {
+        "get": "RequestLicenseRenewalLink"
+    },
+    "/trial-license": {
+        "post": "RequestTrialLicense"
+    },
+    "/audits": {
+        "get": "GetAudits"
+    },
+    "/caches/invalidate": {
+        "post": "InvalidateCaches"
+    },
+    "/logs": {
+        "get": "GetLogs",
+        "post": "AddLogMessage"
+    },
+    "/analytics/old": {
+        "get": "GetAnalytics"
+    },
+    "/server_busy": {
+        "get": "GetServerBusyExpiryTime",
+        "post": "SetServerBusyFlag",
+        "delete": "ClearServerBusyFlag"
+    },
+    "/redirect_location": {
+        "get": "GetRedirectLocation"
+    },
+    "/image": {
+        "get": "GetImageByUrl"
+    },
+    "/upgrade_to_enterprise": {
+        "post": "UpgradeToEnterpriseEdition"
+    },
+    "/upgrade_to_enterprise/status": {
+        "get": "GetStatusForUpgradeToEnterpriseEdition"
+    },
+    "/restart": {
+        "post": "RestartAfterUpgradeToEnterpriseEdition"
+    },
+    "/warn_metrics/status": {
+        "get": "GetWarnMetricsStatus"
+    },
+    "/warn_metrics/ack/{warn_metric_id}": {
+        "post": "AcknowledgeWarningOfMetricStatus"
+    },
+    "/warn_metrics/trial-license-ack/{warn_metric_id}": {
+        "post": "RequestTrialLicenseAndAcknowledgeWarningOfMetricStatus"
+    },
+    "/integrity": {
+        "post": "CheckIntegrity"
+    },
+    "/system/support_packet": {
+        "get": "DownloadZipFile"
+    },
+    "/notifications/ack": {
+        "post": "AcknowledgeNotification"
+    },
+    "/emoji": {
+        "get": "GetCustomEmojis",
+        "post": "CreateCustomEmoji"
+    },
+    "/emoji/{emoji_id}": {
+        "get": "GetCustomEmoji",
+        "delete": "DeleteCustomEmoji"
+    },
+    "/emoji/name/{emoji_name}": {
+        "get": "GetCustomEmojiByName"
+    },
+    "/emoji/{emoji_id}/image": {
+        "get": "GetCustomEmojiImage"
+    },
+    "/emoji/search": {
+        "post": "SearchCustomEmoji"
+    },
+    "/emoji/autocomplete": {
+        "get": "AutocompleteCustomEmoji"
+    },
+    "/hooks/incoming": {
+        "get": "GetIncomingWebhooks",
+        "post": "CreateIncomingWebhook"
+    },
+    "/hooks/incoming/{hook_id}": {
+        "get": "GetIncomingWebhook",
+        "put": "UpdateIncomingWebhook",
+        "delete": "DeleteIncomingWebhook"
+    },
+    "/hooks/outgoing": {
+        "get": "GetOutgoingWebhooks",
+        "post": "CreateOutgoingWebhook"
+    },
+    "/hooks/outgoing/{hook_id}": {
+        "get": "GetOutgoingWebhook",
+        "put": "UpdateOutgoingWebhook",
+        "delete": "DeleteOutgoingWebhook"
+    },
+    "/hooks/outgoing/{hook_id}/regen_token": {
+        "post": "RegenerateTokenForOutgoingWebhook"
+    },
+    "/saml/metadata": {
+        "get": "GetMetadata"
+    },
+    "/saml/metadatafromidp": {
+        "post": "GetMetadataFromIdentityProvider"
+    },
+    "/saml/certificate/idp": {
+        "post": "UploadIdpCertificate",
+        "delete": "RemoveIdpCertificate"
+    },
+    "/saml/certificate/public": {
+        "post": "UploadSamlPublicCertificate",
+        "delete": "RemoveSamlPublicCertificate"
+    },
+    "/saml/certificate/private": {
+        "post": "UploadSamlPrivateKey",
+        "delete": "RemoveSamlPrivateKey"
+    },
+    "/saml/certificate/status": {
+        "get": "GetSamlCertificateStatus"
+    },
+    "/compliance/reports": {
+        "get": "GetReports",
+        "post": "CreateReport"
+    },
+    "/compliance/reports/{report_id}": {
+        "get": "GetReport"
+    },
+    "/compliance/reports/{report_id}/download": {
+        "get": "DownloadReport"
+    },
+    "/ldap/sync": {
+        "post": "SyncWithLdap"
+    },
+    "/ldap/test": {
+        "post": "TestLdapConfiguration"
+    },
+    "/ldap/groups": {
+        "get": "GetLdapGroups"
+    },
+    "/ldap/groups/{remote_id}/link": {
+        "post": "LinkLdapGroup",
+        "delete": "DeleteLinkForLdapGroup"
+    },
+    "/ldap/migrateid": {
+        "post": "MigrateIdLdap"
+    },
+    "/ldap/certificate/public": {
+        "post": "UploadLdapPublicCertificate",
+        "delete": "RemoveLdapPublicCertificate"
+    },
+    "/ldap/certificate/private": {
+        "post": "UploadLdapPrivateKey",
+        "delete": "RemoveLdapPrivateKey"
+    },
+    "/groups": {
+        "get": "GetGroups"
+    },
+    "/groups/{group_id}": {
+        "get": "GetGroup"
+    },
+    "/groups/{group_id}/patch": {
+        "put": "PatchGroup"
+    },
+    "/groups/{group_id}/teams/{team_id}/link": {
+        "post": "LinkTeamToGroup",
+        "delete": "DeleteLinkFromTeamToGroup"
+    },
+    "/groups/{group_id}/channels/{channel_id}/link": {
+        "post": "LinkChannelToGroup",
+        "delete": "DeleteLinkFromChannelToGroup"
+    },
+    "/groups/{group_id}/teams/{team_id}": {
+        "get": "GetGroupsyncableFromTeamId"
+    },
+    "/groups/{group_id}/channels/{channel_id}": {
+        "get": "GetGroupsyncableFromChannelId"
+    },
+    "/groups/{group_id}/teams": {
+        "get": "GetGroupTeams"
+    },
+    "/groups/{group_id}/channels": {
+        "get": "GetGroupChannels"
+    },
+    "/groups/{group_id}/teams/{team_id}/patch": {
+        "put": "PatchGroupsyncableAssociatedToTeam"
+    },
+    "/groups/{group_id}/channels/{channel_id}/patch": {
+        "put": "PatchGroupsyncableAssociatedToChannel"
+    },
+    "/groups/{group_id}/members": {
+        "get": "GetGroupUsers"
+    },
+    "/groups/{group_id}/stats": {
+        "get": "GetGroupStats"
+    },
+    "/channels/{channel_id}/groups": {
+        "get": "GetChannelGroups"
+    },
+    "/teams/{team_id}/groups": {
+        "get": "GetTeamGroups"
+    },
+    "/teams/{team_id}/groups_by_channels": {
+        "get": "GetTeamGroupsByChannels"
+    },
+    "/users/{user_id}/groups": {
+        "get": "GetGroupsForUserid"
+    },
+    "/cluster/status": {
+        "get": "GetClusterStatus"
+    },
+    "/brand/image": {
+        "get": "GetBrandImage",
+        "post": "UploadBrandImage",
+        "delete": "DeleteBrandImage"
+    },
+    "/commands": {
+        "get": "ListCommands",
+        "post": "CreateCommand"
+    },
+    "/teams/{team_id}/commands/autocomplete": {
+        "get": "ListAutocompleteCommands"
+    },
+    "/teams/{team_id}/commands/autocomplete_suggestions": {
+        "get": "ListCommandsAutocompleteSuggestions"
+    },
+    "/commands/{command_id}": {
+        "get": "GetCommand",
+        "put": "UpdateCommand",
+        "delete": "DeleteCommand"
+    },
+    "/commands/{command_id}/move": {
+        "put": "MoveCommand"
+    },
+    "/commands/{command_id}/regen_token": {
+        "put": "RegenCommandToken"
+    },
+    "/commands/execute": {
+        "post": "ExecuteCommand"
+    },
+    "/oauth/apps": {
+        "get": "GetOAuthApps",
+        "post": "RegisterOAuthApp"
+    },
+    "/oauth/apps/{app_id}": {
+        "get": "GetOAuthApp",
+        "put": "UpdateOAuthApp",
+        "delete": "DeleteOAuthApp"
+    },
+    "/oauth/apps/{app_id}/regen_secret": {
+        "post": "RegenerateOAuthAppSecret"
+    },
+    "/oauth/apps/{app_id}/info": {
+        "get": "GetInfoOnOAuthApp"
+    },
+    "/users/{user_id}/oauth/apps/authorized": {
+        "get": "GetAuthorizedOAuthApps"
+    },
+    "/elasticsearch/test": {
+        "post": "TestElasticsearchConfiguration"
+    },
+    "/elasticsearch/purge_indexes": {
+        "post": "PurgeElasticsearchIndexes"
+    },
+    "/bleve/purge_indexes": {
+        "post": "PurgeBleveIndexes"
+    },
+    "/data_retention/policy": {
+        "get": "GetDataRetentionPolicyDetails"
+    },
+    "/plugins": {
+        "get": "GetPlugins",
+        "post": "UploadPlugin"
+    },
+    "/plugins/install_from_url": {
+        "post": "InstallPluginFromUrl"
+    },
+    "/plugins/{plugin_id}": {
+        "delete": "RemovePlugin"
+    },
+    "/plugins/{plugin_id}/enable": {
+        "post": "EnablePlugin"
+    },
+    "/plugins/{plugin_id}/disable": {
+        "post": "DisablePlugin"
+    },
+    "/plugins/webapp": {
+        "get": "GetWebappPlugins"
+    },
+    "/plugins/statuses": {
+        "get": "GetPluginStatuses"
+    },
+    "/plugins/marketplace": {
+        "get": "GetMarketplacePlugins",
+        "post": "InstallMarketplacePlugin"
+    },
+    "/roles/{role_id}": {
+        "get": "GetRole"
+    },
+    "/roles/name/{role_name}": {
+        "get": "GetRoleByName"
+    },
+    "/roles/{role_id}/patch": {
+        "put": "PatchRole"
+    },
+    "/roles/names": {
+        "post": "GetRolesByName"
+    },
+    "/schemes": {
+        "get": "GetSchemes",
+        "post": "CreateScheme"
+    },
+    "/schemes/{scheme_id}": {
+        "get": "GetScheme",
+        "delete": "DeleteScheme"
+    },
+    "/schemes/{scheme_id}/patch": {
+        "put": "PatchScheme"
+    },
+    "/schemes/{scheme_id}/teams": {
+        "get": "GetTeamsUsingScheme"
+    },
+    "/schemes/{scheme_id}/channels": {
+        "get": "GetChannelsUsingScheme"
+    },
+    "/terms_of_service": {
+        "get": "GetLatestTermsOfService",
+        "post": "CreateNewTermsOfService"
+    },
+    "/sharedchannels/remote_info/{remote_id}": {
+        "get": "GetRemoteClusterInfo"
+    },
+    "/opengraph": {
+        "post": "GetOpenGraphMetadataForUrl"
+    },
+    "/reactions": {
+        "post": "CreateReaction"
+    },
+    "/posts/{post_id}/reactions": {
+        "get": "GetReactionsToPost"
+    },
+    "/users/{user_id}/posts/{post_id}/reactions/{emoji_name}": {
+        "delete": "RemoveReactionFromPost"
+    },
+    "/posts/ids/reactions": {
+        "post": "GetReactionsForPosts"
+    },
+    "/actions/dialogs/open": {
+        "post": "OpenDialog"
+    },
+    "/actions/dialogs/submit": {
+        "post": "SubmitDialog"
+    },
+    "/cloud/products": {
+        "get": "GetCloudProducts"
+    },
+    "/cloud/payment": {
+        "post": "CreateCustomerSetupPaymentIntent"
+    },
+    "/cloud/payment/confirm": {
+        "post": "CompletePaymentSetupIntent"
+    },
+    "/cloud/customer": {
+        "get": "GetCloudCustomer",
+        "put": "UpdateCloudCustomer"
+    },
+    "/cloud/customer/address": {
+        "put": "UpdateCloudCustomerAddress"
+    },
+    "/cloud/subscription": {
+        "get": "GetCloudSubscription"
+    },
+    "/cloud/subscription/invoices": {
+        "get": "GetCloudSubscriptionInvoices"
+    },
+    "/cloud/subscription/invoices/{invoice_id}/pdf": {
+        "get": "GetCloudInvoicePdf"
+    },
+    "/cloud/webhook": {
+        "post": "PostEndpointForCwsWebhooks"
+    },
+    "/cloud/subscription/stats": {
+        "get": "GetEndpointForCloudSubscriptionStats"
+    },
+    "/cloud/subscription/limitreached/invite": {
+        "post": "TriggerAdminEmailOnInvite"
+    },
+    "/cloud/subscription/limitreached/join": {
+        "post": "TriggerAdminEmailOnJoin"
+    },
+    "/imports": {
+        "get": "ListImports"
+    },
+    "/exports": {
+        "get": "ListExports"
+    },
+    "/exports/{export_name}": {
+        "get": "DownloadExport",
+        "delete": "DeleteExport"
+    }
+}

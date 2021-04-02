@@ -1,0 +1,26 @@
+from enum import Enum
+from enum import IntEnum
+
+
+{% for enum in int_enums %}
+class {{ enum.reference.class_name }}(IntEnum):
+    {% for key, value in enum.values.items() %}
+    {{ key }} = {{ value }}
+    {% endfor %}
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+{% endfor %}
+
+{% for enum in str_enums %}
+class {{ enum.reference.class_name }}(str, Enum):
+    {% for key, value in enum.values.items() %}
+    {{ key }} = "{{ value }}"
+    {% endfor %}
+
+    def __str__(self) -> str:
+        return str(self.value)
+      
+{% endfor %}
+
