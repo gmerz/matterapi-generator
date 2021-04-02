@@ -444,9 +444,9 @@ class Project:
         endpoint_index_path = endpoint_dir / f"sync_index.rst"
         endpoint_index_path.write_text(endpoint_index_template.render(tags=tags, prefix='sync'), encoding=self.file_encoding)
 
-        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_toc.rst.jinja")
-        endpoint_index_path = endpoint_dir / f"index.rst"
-        endpoint_index_path.write_text(endpoint_index_template.render(), encoding=self.file_encoding)
+#        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_toc.rst.jinja")
+#        endpoint_index_path = endpoint_dir / f"index.rst"
+#        endpoint_index_path.write_text(endpoint_index_template.render(), encoding=self.file_encoding)
 
 
 

@@ -48,6 +48,6 @@ class SyncDriver(BaseDriver):
 
         :type: :class:`~matterapi.endpoints.sync_api.{{tag | pascalcase}}Api`
         """
-        return {{tag | pascalcase}}Api(self._client)
+        return {{tag | pascalcase}}Api(self._client, self.options.skip_response_parsing)
     {% endfor %}
 

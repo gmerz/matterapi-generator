@@ -75,6 +75,9 @@ class {{tag}}Api(ApiBaseClass):
             **request_kwargs,
         )
 
+        if self.skip_response_parsing == True:
+            return response
+
         {% for response in endpoint.responses %}
         {% if response.source != "None" %}
         if response.status_code == {{ response.status_code }}:
