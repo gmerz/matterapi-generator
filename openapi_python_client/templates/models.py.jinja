@@ -24,7 +24,8 @@ class {{ model.reference.class_name }}(BaseConfig):
     {% if property.default is none and property.required %}
     {{ property.to_string() | indent(4) }}
     {% if property.description %}
-    """ {{property.description | replace('`','``')}} """
+    """ {{property.description | indent(4) }}
+    """
     {% endif %}
     {% endif %}
     {% endfor %}
@@ -32,7 +33,8 @@ class {{ model.reference.class_name }}(BaseConfig):
     {% if property.default is not none or not property.required %}
     {{ property.to_string() | indent(4) }}
     {% if property.description %}
-    """ {{property.description | replace('`','``')}} """
+    """ {{property.description | indent(4) }}
+    """
     {% endif %}
     {% endif %}
   {% endfor %}

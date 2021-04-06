@@ -71,7 +71,6 @@ class EndpointCollection:
                 
                 # Add multi-tag endpoints to all tags
                 for tag_name in tags[1:]:
-                    print("More tags", tag_name)
                     tag = utils.snake_case(tag_name)
                     endpoint_next = deepcopy(endpoint)
                     endpoint_next.tag = tag_name

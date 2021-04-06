@@ -84,7 +84,11 @@ def clean_description(description):
     description = re.sub(regex_note,"", description,flags=re.S)
     description = re.sub(regex_local,"", description,flags=re.S)
     description = re.sub("\n\n+","\n\n", description,flags=re.S)
-    description = description.strip() + '\n'
+    description.replace('`', '``')
+    description = description.strip()
+
+    if repl_perms or repl_version or regex_local or repl_note:
+        description += '\n'
 
     if repl_perms:
         description += f'\nPermissions:\n    {repl_perms[0]}'
@@ -96,7 +100,6 @@ def clean_description(description):
     if repl_note:
         description += f'\n\nWarning:\n    {repl_note[0]}'
     
-    description += '\n\n'
     return description
 
 
