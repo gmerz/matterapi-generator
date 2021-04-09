@@ -13,12 +13,13 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, validator
 from ..models import User
 from .client import ClientOptions
 
-logger = logging.getLogger("mattermostapi.driver")
+logger = logging.getLogger("matterapi.driver")
 logger.setLevel(logging.INFO)
 
 
 class AuthLogin(BaseModel):
     """ Mattermost Auhentication Credentials """
+
     login_id: str
     """ Login id for authentication """
     password: str
@@ -29,6 +30,7 @@ class AuthLogin(BaseModel):
 
 class AuthToken(BaseModel):
     """ Mattermost Auhentication Token """
+
     token: str
 
 
@@ -66,7 +68,6 @@ class DriverOptions(BaseModel):
     """ The waiting time between re-connect attempts for websocket connections """
     skip_response_parsing: bool = False
     """ If this is set, responses will not be parsed into objects, but will be returned as raw httpx requests """
-
 
     @validator("ws_url", pre=True, always=True)
     def _ws_url_setter(cls, v, values):
@@ -116,15 +117,15 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
             await asyncio.to_thread(self.login)
 
     async def start_ws(self, event_handler: Callable, relogin=False):
-        """ Start the websocket connection and pass messages to event_handler
+        """Start the websocket connection and pass messages to event_handler
 
         Connects to the websocket, completes authentication, and handles incoming messages.
         Will automatically try to reconnect to the server on connection errors.
 
         Args:
             event_handler: The message handler. Can be a function or coroutine. Get's the message passed as argument
-            relogin: Set to ``True`` to run login() after a connection error. 
-                
+            relogin: Set to ``True`` to run login() after a connection error.
+
                 This might be useful in case a session ends for username/password based logins and you need to acquire a new session token.
         """
 
@@ -134,7 +135,8 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
             except (socket.gaierror, websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
                 logger.info(
                     "Connection to websocket closed. Either the server is not reachable or authentication failed. Reconnecting in %s seconds",
-                    self.options.ws_reconnect_wait_time,exc_info=True
+                    self.options.ws_reconnect_wait_time,
+                    exc_info=True,
                 )
                 logger.info(e)
             except websockets.exceptions.WebSocketException:
@@ -183,15 +185,22 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
                         break
                 logger.info("Got a stray message during authentication procedure: %s", message)
             tasks = set()
-            async for raw_message in websocket:
-                print("handle:")
-                message = json.loads(raw_message)
-                task = await self._handle_messages(event_handler, message)
-                if self.options.ws_concurrent:
-                    tasks.add(task)
-                    for task in list(tasks):
-                        if task.done():
+            while True:
+                try:
+                    raw_message = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                    message = json.loads(raw_message)
+                    task = await self._handle_messages(event_handler, message)
+                    if self.options.ws_concurrent:
+                        tasks.add(task)
+                    else:
+                        await task
+                except asyncio.TimeoutError:
+                    ...
+                # In case we handle tasks concurrently we will want to collect results/exceptions
+                for task in list(tasks):
+                    if task.done():
+                        try: 
                             await task
-                            tasks.remove(task)
-                else:
-                    await task
+                        except Exception:
+                            logger.exception("Websocket task failed")
+                        tasks.remove(task)
