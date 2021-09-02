@@ -3,7 +3,7 @@
         "post": "Login"
     },
     "/users/login/cws": {
-        "post": "LoginCwsToken"
+        "post": "LoginByCwsToken"
     },
     "/users/logout": {
         "post": "Logout"
@@ -17,7 +17,7 @@
         "post": "GetUsersByIds"
     },
     "/users/group_channels": {
-        "post": "GetUsersByGroupChannels"
+        "post": "GetUsersByGroupChannelIds"
     },
     "/users/usernames": {
         "post": "GetUsersByUsernames"
@@ -32,15 +32,15 @@
         "get": "GetKnownUsers"
     },
     "/users/stats": {
-        "get": "GetTotalCountOfUsersInSystem"
+        "get": "GetTotalUsersStats"
     },
     "/users/stats/filtered": {
-        "get": "GetTotalCountOfUsersInSystemMatchingFilters"
+        "get": "GetTotalUsersStatsFiltered"
     },
     "/users/{user_id}": {
         "get": "GetUser",
         "put": "UpdateUser",
-        "delete": "DeactivateUserAccount"
+        "delete": "DeleteUser"
     },
     "/users/{user_id}/patch": {
         "put": "PatchUser"
@@ -49,15 +49,15 @@
         "put": "UpdateUserRoles"
     },
     "/users/{user_id}/active": {
-        "put": "UpdateUserActiveStatus"
+        "put": "UpdateUserActive"
     },
     "/users/{user_id}/image": {
-        "get": "GetUserProfileImage",
-        "post": "SetUserProfileImage",
-        "delete": "DeleteUserProfileImage"
+        "get": "GetProfileImage",
+        "post": "SetProfileImage",
+        "delete": "SetDefaultProfileImage"
     },
     "/users/{user_id}/image/default": {
-        "get": "ReturnUserDefaultProfileImage"
+        "get": "GetDefaultProfileImage"
     },
     "/users/username/{username}": {
         "get": "GetUserByUsername"
@@ -78,7 +78,7 @@
         "post": "PromoteGuestToUser"
     },
     "/users/mfa": {
-        "post": "CheckMfa"
+        "post": "CheckUserMfa"
     },
     "/users/{user_id}/password": {
         "put": "UpdateUserPassword"
@@ -90,16 +90,16 @@
         "get": "GetUserByEmail"
     },
     "/users/{user_id}/sessions": {
-        "get": "GetUserSessions"
+        "get": "GetSessions"
     },
     "/users/{user_id}/sessions/revoke": {
-        "post": "RevokeUserSession"
+        "post": "RevokeSession"
     },
     "/users/{user_id}/sessions/revoke/all": {
-        "post": "RevokeAllUserSessions"
+        "post": "RevokeAllSessions"
     },
     "/users/sessions/device": {
-        "put": "AttachMobileDevice"
+        "put": "AttachDeviceId"
     },
     "/users/{user_id}/audits": {
         "get": "GetUserAudits"
@@ -114,7 +114,7 @@
         "post": "SendVerificationEmail"
     },
     "/users/login/switch": {
-        "post": "SwitchLoginMethod"
+        "post": "SwitchAccountType"
     },
     "/users/{user_id}/tokens": {
         "get": "GetUserAccessTokensForUser",
@@ -130,16 +130,16 @@
         "get": "GetUserAccessToken"
     },
     "/users/tokens/disable": {
-        "post": "DisablePersonalAccessToken"
+        "post": "DisableUserAccessToken"
     },
     "/users/tokens/enable": {
-        "post": "EnablePersonalAccessToken"
+        "post": "EnableUserAccessToken"
     },
     "/users/tokens/search": {
         "post": "SearchUserAccessTokens"
     },
     "/users/{user_id}/auth": {
-        "put": "UpdateUserAuthenticationMethod"
+        "put": "UpdateUserAuth"
     },
     "/users/{user_id}/terms_of_service": {
         "get": "GetUserTermsOfService",
@@ -178,12 +178,12 @@
         "post": "EnableBot"
     },
     "/bots/{bot_user_id}/assign/{user_id}": {
-        "post": "AssignBotToUser"
+        "post": "AssignBot"
     },
     "/bots/{bot_user_id}/icon": {
-        "get": "GetBotIcon",
-        "post": "SetBotIcon",
-        "delete": "DeleteBotIcon"
+        "get": "GetBotIconImage",
+        "post": "SetBotIconImage",
+        "delete": "DeleteBotIconImage"
     },
     "/bots/{bot_user_id}/convert_to_user": {
         "post": "ConvertBotToUser"
@@ -192,13 +192,13 @@
         "get": "GetUserThreads"
     },
     "/users/{user_id}/teams/{team_id}/threads/mention_counts": {
-        "get": "GetThreadMentionsForUserPerChannel"
+        "get": "GetThreadMentionCountsByChannel"
     },
     "/users/{user_id}/teams/{team_id}/threads/read": {
-        "put": "MarkThreadsReadForUser"
+        "put": "UpdateThreadsReadForUser"
     },
     "/users/{user_id}/teams/{team_id}/threads/{thread_id}/read/{timestamp}": {
-        "put": "MarkThreadReadForUser"
+        "put": "UpdateThreadReadForUser"
     },
     "/users/{user_id}/teams/{team_id}/threads/{thread_id}/following": {
         "put": "StartFollowingThread",
@@ -212,23 +212,23 @@
         "put": "UpdateUserStatus"
     },
     "/users/status/ids": {
-        "post": "GetUserStatusesById"
+        "post": "GetUsersStatusesByIds"
     },
     "/users/{user_id}/status/custom": {
         "put": "UpdateUserCustomStatus",
-        "delete": "DeleteUserCustomStatus"
+        "delete": "UnsetUserCustomStatus"
     },
     "/users/{user_id}/status/custom/recent": {
-        "delete": "DeleteUserRecentCustomStatus"
+        "delete": "RemoveRecentCustomStatus"
     },
     "/teams": {
-        "get": "GetTeams",
+        "get": "GetAllTeams",
         "post": "CreateTeam"
     },
     "/teams/{team_id}": {
         "get": "GetTeam",
         "put": "UpdateTeam",
-        "delete": "DeleteTeam"
+        "delete": "SoftDeleteTeam"
     },
     "/teams/{team_id}/patch": {
         "put": "PatchTeam"
@@ -246,10 +246,10 @@
         "post": "SearchTeams"
     },
     "/teams/name/{name}/exists": {
-        "get": "CheckTeamExists"
+        "get": "TeamExists"
     },
     "/users/{user_id}/teams": {
-        "get": "GetUserTeams"
+        "get": "GetTeamsForUser"
     },
     "/teams/{team_id}/members": {
         "get": "GetTeamMembers",
@@ -286,59 +286,59 @@
         "put": "UpdateTeamMemberRoles"
     },
     "/teams/{team_id}/members/{user_id}/schemeRoles": {
-        "put": "UpdateSchemeDerivedRolesOfMember"
+        "put": "UpdateTeamMemberSchemeRoles"
     },
     "/users/{user_id}/teams/unread": {
         "get": "GetTeamsUnreadForUser"
     },
     "/users/{user_id}/teams/{team_id}/unread": {
-        "get": "GetUnreadsForTeam"
+        "get": "GetTeamUnread"
     },
     "/teams/{team_id}/invite/email": {
-        "post": "InviteUsersToTeamByEmail"
+        "post": "InviteUsersToTeam"
     },
     "/teams/{team_id}/invite-guests/email": {
-        "post": "InviteGuestsToTeamByEmail"
+        "post": "InviteGuestsToTeam"
     },
     "/teams/invites/email": {
-        "delete": "InvalidateActiveEmailInvitations"
+        "delete": "InvalidateEmailInvites"
     },
     "/teams/{team_id}/import": {
         "post": "ImportTeam"
     },
     "/teams/invite/{invite_id}": {
-        "get": "GetInviteInfoForTeam"
+        "get": "GetTeamInviteInfo"
     },
     "/teams/{team_id}/scheme": {
-        "put": "SetTeamScheme"
+        "put": "UpdateTeamScheme"
     },
     "/teams/{team_id}/members_minus_group_members": {
-        "get": "GetTeamMembersMinusGroupMembers"
+        "get": "TeamMembersMinusGroupMembers"
     },
     "/teams/{team_id}/files/search": {
-        "post": "SearchFilesInTeam"
+        "post": "SearchFiles"
     },
     "/channels": {
-        "get": "GetChannels",
+        "get": "GetAllChannels",
         "post": "CreateChannel"
     },
     "/channels/direct": {
-        "post": "CreateDirectMessageChannel"
+        "post": "CreateDirectChannel"
     },
     "/channels/group": {
-        "post": "CreateGroupMessageChannel"
+        "post": "CreateGroupChannel"
     },
     "/channels/search": {
-        "post": "SearchChannelsAcrossTeams"
+        "post": "SearchAllChannels"
     },
     "/channels/group/search": {
         "post": "SearchGroupChannels"
     },
     "/teams/{team_id}/channels/ids": {
-        "post": "GetChannelsByIds"
+        "post": "GetPublicChannelsByIdsForTeam"
     },
     "/channels/{channel_id}/timezones": {
-        "get": "GetChannelTimezones"
+        "get": "GetChannelMembersTimezones"
     },
     "/channels/{channel_id}": {
         "get": "GetChannel",
@@ -361,25 +361,25 @@
         "post": "MoveChannel"
     },
     "/channels/{channel_id}/stats": {
-        "get": "GetChannelStatistics"
+        "get": "GetChannelStats"
     },
     "/channels/{channel_id}/pinned": {
-        "get": "GetChannelPinnedPosts"
+        "get": "GetPinnedPosts"
     },
     "/teams/{team_id}/channels": {
-        "get": "GetPublicChannels"
+        "get": "GetPublicChannelsForTeam"
     },
     "/teams/{team_id}/channels/private": {
-        "get": "GetPrivateChannels"
+        "get": "GetPrivateChannelsForTeam"
     },
     "/teams/{team_id}/channels/deleted": {
-        "get": "GetDeletedChannels"
+        "get": "GetDeletedChannelsForTeam"
     },
     "/teams/{team_id}/channels/autocomplete": {
-        "get": "AutocompleteChannels"
+        "get": "AutocompleteChannelsForTeam"
     },
     "/teams/{team_id}/channels/search_autocomplete": {
-        "get": "AutocompleteChannelsForSearch"
+        "get": "AutocompleteChannelsForTeamForSearch"
     },
     "/teams/{team_id}/channels/search": {
         "post": "SearchChannels"
@@ -408,16 +408,16 @@
         "put": "UpdateChannelRoles"
     },
     "/channels/{channel_id}/members/{user_id}/schemeRoles": {
-        "put": "UpdateSchemeDerivedRolesOfChannelMember"
+        "put": "UpdateChannelMemberSchemeRoles"
     },
     "/channels/{channel_id}/members/{user_id}/notify_props": {
-        "put": "UpdateChannelNotifications"
+        "put": "UpdateChannelNotifyProps"
     },
     "/channels/members/{user_id}/view": {
         "post": "ViewChannel"
     },
     "/users/{user_id}/teams/{team_id}/channels/members": {
-        "get": "GetChannelMembershipsForUser"
+        "get": "GetChannelMembersForUser"
     },
     "/users/{user_id}/teams/{team_id}/channels": {
         "get": "GetChannelsForTeamForUser"
@@ -432,27 +432,27 @@
         "get": "ChannelMembersMinusGroupMembers"
     },
     "/channels/{channel_id}/member_counts_by_group": {
-        "get": "ChannelMembersCountsByGroup"
+        "get": "GetChannelMemberCountsByGroup"
     },
     "/channels/{channel_id}/moderations": {
-        "get": "GetChannelModerationInformation"
+        "get": "GetChannelModerations"
     },
     "/channels/{channel_id}/moderations/patch": {
-        "put": "UpdateChannelModerationSettings"
+        "put": "PatchChannelModerations"
     },
     "/users/{user_id}/teams/{team_id}/channels/categories": {
-        "get": "GetUserSidebarCategories",
-        "put": "UpdateUserSidebarCategories",
-        "post": "CreateUserSidebarCategory"
+        "get": "GetSidebarCategoriesForTeamForUser",
+        "put": "UpdateSidebarCategoriesForTeamForUser",
+        "post": "CreateSidebarCategoryForTeamForUser"
     },
     "/users/{user_id}/teams/{team_id}/channels/categories/order": {
-        "get": "GetUserSidebarCategoryOrder",
-        "put": "UpdateUserSidebarCategoryOrder"
+        "get": "GetSidebarCategoryOrderForTeamForUser",
+        "put": "UpdateSidebarCategoryOrderForTeamForUser"
     },
     "/users/{user_id}/teams/{team_id}/channels/categories/{category_id}": {
-        "get": "GetSidebarCategory",
-        "put": "UpdateSidebarCategory",
-        "delete": "DeleteSidebarCategory"
+        "get": "GetSidebarCategoryForTeamForUser",
+        "put": "UpdateSidebarCategoryForTeamForUser",
+        "delete": "RemoveSidebarCategoryForTeamForUser"
     },
     "/posts": {
         "post": "CreatePost"
@@ -466,50 +466,50 @@
         "delete": "DeletePost"
     },
     "/users/{user_id}/posts/{post_id}/set_unread": {
-        "post": "MarkAsUnreadFromPost"
+        "post": "SetPostUnread"
     },
     "/posts/{post_id}/patch": {
         "put": "PatchPost"
     },
     "/posts/{post_id}/thread": {
-        "get": "GetThread"
+        "get": "GetPostThread"
     },
     "/users/{user_id}/posts/flagged": {
-        "get": "GetFlaggedPosts"
+        "get": "GetFlaggedPostsForUser"
     },
     "/posts/{post_id}/files/info": {
-        "get": "GetFileInfoForPost"
+        "get": "GetFileInfosForPost"
     },
     "/channels/{channel_id}/posts": {
         "get": "GetPostsForChannel"
     },
     "/users/{user_id}/channels/{channel_id}/posts/unread": {
-        "get": "GetPostsAroundOldestUnread"
+        "get": "GetPostsAroundLastUnread"
     },
     "/teams/{team_id}/posts/search": {
-        "post": "SearchForTeamPosts"
+        "post": "SearchPosts"
     },
     "/posts/{post_id}/pin": {
-        "post": "PinPostToChannel"
+        "post": "PinPost"
     },
     "/posts/{post_id}/unpin": {
-        "post": "UnpinPostToChannel"
+        "post": "UnpinPost"
     },
     "/posts/{post_id}/actions/{action_id}": {
-        "post": "PerformPostAction"
+        "post": "DoPostAction"
     },
     "/users/{user_id}/preferences": {
-        "get": "GetUserPreferences",
-        "put": "SaveUserPreferences"
+        "get": "GetPreferences",
+        "put": "UpdatePreferences"
     },
     "/users/{user_id}/preferences/delete": {
-        "post": "DeleteUserPreferences"
+        "post": "DeletePreferences"
     },
     "/users/{user_id}/preferences/{category}": {
-        "get": "GetUserPreferencesByCategory"
+        "get": "GetPreferencesByCategory"
     },
     "/users/{user_id}/preferences/{category}/name/{preference_name}": {
-        "get": "GetSpecificUserPreference"
+        "get": "GetPreferencesByCategoryByName"
     },
     "/files": {
         "post": "UploadFile"
@@ -524,42 +524,42 @@
         "get": "GetFilePreview"
     },
     "/files/{file_id}/link": {
-        "get": "GetPublicFileLink"
+        "get": "GetFileLink"
     },
     "/files/{file_id}/info": {
-        "get": "GetMetadataForFile"
+        "get": "GetFileInfo"
     },
     "/files/{file_id}/public": {
-        "get": "GetPublicFile"
+        "get": "GetFilePublic"
     },
     "/uploads": {
         "post": "CreateUpload"
     },
     "/uploads/{upload_id}": {
-        "get": "GetUploadSession",
-        "post": "PerformFileUpload"
+        "get": "GetUpload",
+        "post": "UploadData"
     },
     "/jobs": {
         "get": "GetJobs",
-        "post": "CreateNewJob"
+        "post": "CreateJob"
     },
     "/jobs/{job_id}": {
         "get": "GetJob"
     },
     "/jobs/{job_id}/download": {
-        "get": "DownloadJobResults"
+        "get": "DownloadJob"
     },
     "/jobs/{job_id}/cancel": {
         "post": "CancelJob"
     },
     "/jobs/type/{type}": {
-        "get": "GetJobsOfGivenType"
+        "get": "GetJobsByType"
     },
     "/system/timezones": {
-        "get": "GetSupportedTimezones"
+        "get": "GetSupportedTimezone"
     },
     "/system/ping": {
-        "get": "GetPingWithServerStatus"
+        "get": "GetPing"
     },
     "/system/notices/{teamId}": {
         "get": "GetNotices"
@@ -574,7 +574,7 @@
         "post": "TestEmail"
     },
     "/site_url/test": {
-        "post": "TestSiteUrl"
+        "post": "TestSiteURL"
     },
     "/file/s3_test": {
         "post": "TestS3Connection"
@@ -587,10 +587,10 @@
         "post": "ReloadConfig"
     },
     "/config/client": {
-        "get": "GetConfigClient"
+        "get": "GetClientConfig"
     },
     "/config/environment": {
-        "get": "GetConfigEnvVariables"
+        "get": "GetEnvironmentConfig"
     },
     "/config/patch": {
         "put": "PatchConfig"
@@ -619,15 +619,15 @@
     },
     "/logs": {
         "get": "GetLogs",
-        "post": "AddLogMessage"
+        "post": "PostLog"
     },
     "/analytics/old": {
-        "get": "GetAnalytics"
+        "get": "GetAnalyticsOld"
     },
     "/server_busy": {
-        "get": "GetServerBusyExpiryTime",
-        "post": "SetServerBusyFlag",
-        "delete": "ClearServerBusyFlag"
+        "get": "GetServerBusyExpires",
+        "post": "SetServerBusy",
+        "delete": "ClearServerBusy"
     },
     "/redirect_location": {
         "get": "GetRedirectLocation"
@@ -636,51 +636,51 @@
         "get": "GetImageByUrl"
     },
     "/upgrade_to_enterprise": {
-        "post": "UpgradeToEnterpriseEdition"
+        "post": "UpgradeToEnterprise"
     },
     "/upgrade_to_enterprise/status": {
-        "get": "GetStatusForUpgradeToEnterpriseEdition"
+        "get": "UpgradeToEnterpriseStatus"
     },
     "/restart": {
-        "post": "RestartAfterUpgradeToEnterpriseEdition"
+        "post": "RestartServer"
     },
     "/warn_metrics/status": {
         "get": "GetWarnMetricsStatus"
     },
     "/warn_metrics/ack/{warn_metric_id}": {
-        "post": "AcknowledgeWarningOfMetricStatus"
+        "post": "SendWarnMetricAck"
     },
     "/warn_metrics/trial-license-ack/{warn_metric_id}": {
-        "post": "RequestTrialLicenseAndAcknowledgeWarningOfMetricStatus"
+        "post": "SendTrialLicenseWarnMetricAck"
     },
     "/integrity": {
         "post": "CheckIntegrity"
     },
     "/system/support_packet": {
-        "get": "DownloadZipFile"
+        "get": "GenerateSupportPacket"
     },
     "/notifications/ack": {
         "post": "AcknowledgeNotification"
     },
     "/emoji": {
-        "get": "GetCustomEmojis",
-        "post": "CreateCustomEmoji"
+        "get": "GetEmojiList",
+        "post": "CreateEmoji"
     },
     "/emoji/{emoji_id}": {
-        "get": "GetCustomEmoji",
-        "delete": "DeleteCustomEmoji"
+        "get": "GetEmoji",
+        "delete": "DeleteEmoji"
     },
     "/emoji/name/{emoji_name}": {
-        "get": "GetCustomEmojiByName"
+        "get": "GetEmojiByName"
     },
     "/emoji/{emoji_id}/image": {
-        "get": "GetCustomEmojiImage"
+        "get": "GetEmojiImage"
     },
     "/emoji/search": {
-        "post": "SearchCustomEmoji"
+        "post": "SearchEmoji"
     },
     "/emoji/autocomplete": {
-        "get": "AutocompleteCustomEmoji"
+        "get": "AutocompleteEmoji"
     },
     "/hooks/incoming": {
         "get": "GetIncomingWebhooks",
@@ -701,62 +701,62 @@
         "delete": "DeleteOutgoingWebhook"
     },
     "/hooks/outgoing/{hook_id}/regen_token": {
-        "post": "RegenerateTokenForOutgoingWebhook"
+        "post": "RegenOutgoingHookToken"
     },
     "/saml/metadata": {
-        "get": "GetMetadata"
+        "get": "GetSamlMetadata"
     },
     "/saml/metadatafromidp": {
-        "post": "GetMetadataFromIdentityProvider"
+        "post": "GetSamlMetadataFromIdp"
     },
     "/saml/certificate/idp": {
-        "post": "UploadIdpCertificate",
-        "delete": "RemoveIdpCertificate"
+        "post": "UploadSamlIdpCertificate",
+        "delete": "DeleteSamlIdpCertificate"
     },
     "/saml/certificate/public": {
         "post": "UploadSamlPublicCertificate",
-        "delete": "RemoveSamlPublicCertificate"
+        "delete": "DeleteSamlPublicCertificate"
     },
     "/saml/certificate/private": {
-        "post": "UploadSamlPrivateKey",
-        "delete": "RemoveSamlPrivateKey"
+        "post": "UploadSamlPrivateCertificate",
+        "delete": "DeleteSamlPrivateCertificate"
     },
     "/saml/certificate/status": {
         "get": "GetSamlCertificateStatus"
     },
     "/compliance/reports": {
-        "get": "GetReports",
-        "post": "CreateReport"
+        "get": "GetComplianceReports",
+        "post": "CreateComplianceReport"
     },
     "/compliance/reports/{report_id}": {
-        "get": "GetReport"
+        "get": "GetComplianceReport"
     },
     "/compliance/reports/{report_id}/download": {
-        "get": "DownloadReport"
+        "get": "DownloadComplianceReport"
     },
     "/ldap/sync": {
-        "post": "SyncWithLdap"
+        "post": "SyncLdap"
     },
     "/ldap/test": {
-        "post": "TestLdapConfiguration"
+        "post": "TestLdap"
     },
     "/ldap/groups": {
         "get": "GetLdapGroups"
     },
     "/ldap/groups/{remote_id}/link": {
         "post": "LinkLdapGroup",
-        "delete": "DeleteLinkForLdapGroup"
+        "delete": "UnlinkLdapGroup"
     },
     "/ldap/migrateid": {
         "post": "MigrateIdLdap"
     },
     "/ldap/certificate/public": {
         "post": "UploadLdapPublicCertificate",
-        "delete": "RemoveLdapPublicCertificate"
+        "delete": "DeleteLdapPublicCertificate"
     },
     "/ldap/certificate/private": {
-        "post": "UploadLdapPrivateKey",
-        "delete": "RemoveLdapPrivateKey"
+        "post": "UploadLdapPrivateCertificate",
+        "delete": "DeleteLdapPrivateCertificate"
     },
     "/groups": {
         "get": "GetGroups"
@@ -768,30 +768,30 @@
         "put": "PatchGroup"
     },
     "/groups/{group_id}/teams/{team_id}/link": {
-        "post": "LinkTeamToGroup",
-        "delete": "DeleteLinkFromTeamToGroup"
+        "post": "LinkGroupSyncableForTeam",
+        "delete": "UnlinkGroupSyncableForTeam"
     },
     "/groups/{group_id}/channels/{channel_id}/link": {
-        "post": "LinkChannelToGroup",
-        "delete": "DeleteLinkFromChannelToGroup"
+        "post": "LinkGroupSyncableForChannel",
+        "delete": "UnlinkGroupSyncableForChannel"
     },
     "/groups/{group_id}/teams/{team_id}": {
-        "get": "GetGroupsyncableFromTeamId"
+        "get": "GetGroupSyncableForTeamId"
     },
     "/groups/{group_id}/channels/{channel_id}": {
-        "get": "GetGroupsyncableFromChannelId"
+        "get": "GetGroupSyncableForChannelId"
     },
     "/groups/{group_id}/teams": {
-        "get": "GetGroupTeams"
+        "get": "GetGroupSyncablesTeams"
     },
     "/groups/{group_id}/channels": {
-        "get": "GetGroupChannels"
+        "get": "GetGroupSyncablesChannels"
     },
     "/groups/{group_id}/teams/{team_id}/patch": {
-        "put": "PatchGroupsyncableAssociatedToTeam"
+        "put": "PatchGroupSyncableForTeam"
     },
     "/groups/{group_id}/channels/{channel_id}/patch": {
-        "put": "PatchGroupsyncableAssociatedToChannel"
+        "put": "PatchGroupSyncableForChannel"
     },
     "/groups/{group_id}/members": {
         "get": "GetGroupUsers"
@@ -800,16 +800,16 @@
         "get": "GetGroupStats"
     },
     "/channels/{channel_id}/groups": {
-        "get": "GetChannelGroups"
+        "get": "GetGroupsByChannel"
     },
     "/teams/{team_id}/groups": {
-        "get": "GetTeamGroups"
+        "get": "GetGroupsByTeam"
     },
     "/teams/{team_id}/groups_by_channels": {
-        "get": "GetTeamGroupsByChannels"
+        "get": "GetGroupsAssociatedToChannelsByTeam"
     },
     "/users/{user_id}/groups": {
-        "get": "GetGroupsForUserid"
+        "get": "GetGroupsByUserId"
     },
     "/cluster/status": {
         "get": "GetClusterStatus"
@@ -827,10 +827,10 @@
         "get": "ListAutocompleteCommands"
     },
     "/teams/{team_id}/commands/autocomplete_suggestions": {
-        "get": "ListCommandsAutocompleteSuggestions"
+        "get": "ListCommandAutocompleteSuggestions"
     },
     "/commands/{command_id}": {
-        "get": "GetCommand",
+        "get": "GetCommandById",
         "put": "UpdateCommand",
         "delete": "DeleteCommand"
     },
@@ -845,7 +845,7 @@
     },
     "/oauth/apps": {
         "get": "GetOAuthApps",
-        "post": "RegisterOAuthApp"
+        "post": "CreateOAuthApp"
     },
     "/oauth/apps/{app_id}": {
         "get": "GetOAuthApp",
@@ -856,13 +856,13 @@
         "post": "RegenerateOAuthAppSecret"
     },
     "/oauth/apps/{app_id}/info": {
-        "get": "GetInfoOnOAuthApp"
+        "get": "GetOAuthAppInfo"
     },
     "/users/{user_id}/oauth/apps/authorized": {
-        "get": "GetAuthorizedOAuthApps"
+        "get": "GetAuthorizedOAuthAppsForUser"
     },
     "/elasticsearch/test": {
-        "post": "TestElasticsearchConfiguration"
+        "post": "TestElasticsearch"
     },
     "/elasticsearch/purge_indexes": {
         "post": "PurgeElasticsearchIndexes"
@@ -871,7 +871,7 @@
         "post": "PurgeBleveIndexes"
     },
     "/data_retention/policy": {
-        "get": "GetDataRetentionPolicyDetails"
+        "get": "GetDataRetentionPolicy"
     },
     "/plugins": {
         "get": "GetPlugins",
@@ -909,7 +909,7 @@
         "put": "PatchRole"
     },
     "/roles/names": {
-        "post": "GetRolesByName"
+        "post": "GetRolesByNames"
     },
     "/schemes": {
         "get": "GetSchemes",
@@ -923,47 +923,47 @@
         "put": "PatchScheme"
     },
     "/schemes/{scheme_id}/teams": {
-        "get": "GetTeamsUsingScheme"
+        "get": "GetTeamsForScheme"
     },
     "/schemes/{scheme_id}/channels": {
-        "get": "GetChannelsUsingScheme"
+        "get": "GetChannelsForScheme"
     },
     "/terms_of_service": {
-        "get": "GetLatestTermsOfService",
-        "post": "CreateNewTermsOfService"
+        "get": "GetTermsOfService",
+        "post": "CreateTermsOfService"
     },
     "/sharedchannels/remote_info/{remote_id}": {
         "get": "GetRemoteClusterInfo"
     },
     "/opengraph": {
-        "post": "GetOpenGraphMetadataForUrl"
+        "post": "OpenGraph"
     },
     "/reactions": {
-        "post": "CreateReaction"
+        "post": "SaveReaction"
     },
     "/posts/{post_id}/reactions": {
-        "get": "GetReactionsToPost"
+        "get": "GetReactions"
     },
     "/users/{user_id}/posts/{post_id}/reactions/{emoji_name}": {
-        "delete": "RemoveReactionFromPost"
+        "delete": "DeleteReaction"
     },
     "/posts/ids/reactions": {
-        "post": "GetReactionsForPosts"
+        "post": "GetBulkReactions"
     },
     "/actions/dialogs/open": {
-        "post": "OpenDialog"
+        "post": "OpenInteractiveDialog"
     },
     "/actions/dialogs/submit": {
-        "post": "SubmitDialog"
+        "post": "SubmitInteractiveDialog"
     },
     "/cloud/products": {
         "get": "GetCloudProducts"
     },
     "/cloud/payment": {
-        "post": "CreateCustomerSetupPaymentIntent"
+        "post": "CreateCustomerPayment"
     },
     "/cloud/payment/confirm": {
-        "post": "CompletePaymentSetupIntent"
+        "post": "ConfirmCustomerPayment"
     },
     "/cloud/customer": {
         "get": "GetCloudCustomer",
@@ -973,25 +973,25 @@
         "put": "UpdateCloudCustomerAddress"
     },
     "/cloud/subscription": {
-        "get": "GetCloudSubscription"
+        "get": "GetSubscription"
     },
     "/cloud/subscription/invoices": {
-        "get": "GetCloudSubscriptionInvoices"
+        "get": "GetInvoicesForSubscription"
     },
     "/cloud/subscription/invoices/{invoice_id}/pdf": {
-        "get": "GetCloudInvoicePdf"
+        "get": "GetInvoiceForSubscriptionAsPdf"
     },
     "/cloud/webhook": {
         "post": "PostEndpointForCwsWebhooks"
     },
     "/cloud/subscription/stats": {
-        "get": "GetEndpointForCloudSubscriptionStats"
+        "get": "GetSubscriptionStats"
     },
     "/cloud/subscription/limitreached/invite": {
-        "post": "TriggerAdminEmailOnInvite"
+        "post": "SendAdminUpgradeRequestEmail"
     },
     "/cloud/subscription/limitreached/join": {
-        "post": "TriggerAdminEmailOnJoin"
+        "post": "SendAdminUpgradeRequestEmailOnJoin"
     },
     "/imports": {
         "get": "ListImports"
@@ -1002,5 +1002,52 @@
     "/exports/{export_name}": {
         "get": "DownloadExport",
         "delete": "DeleteExport"
+    },
+    "/saml/reset_auth_data": {
+        "post": "ResetSamlAuthDataToEmail"
+    },
+    "/users/{user_id}/data_retention/team_policies": {
+        "get": "GetTeamPoliciesForUser"
+    },
+    "/users/{user_id}/data_retention/channel_policies": {
+        "get": "GetChannelPoliciesForUser"
+    },
+    "/data_retention/policies_count": {
+        "get": "GetDataRetentionPoliciesCount"
+    },
+    "/data_retention/policies": {
+        "get": "GetDataRetentionPolicies",
+        "post": "CreateDataRetentionPolicy"
+    },
+    "/data_retention/policies/{policy_id}": {
+        "get": "GetDataRetentionPolicyByID",
+        "delete": "DeleteDataRetentionPolicy",
+        "patch": "PatchDataRetentionPolicy"
+    },
+    "/data_retention/policies/{policy_id}/teams": {
+        "get": "GetTeamsForRetentionPolicy",
+        "post": "AddTeamsToRetentionPolicy",
+        "delete": "RemoveTeamsFromRetentionPolicy"
+    },
+    "/data_retention/policies/{policy_id}/teams/search": {
+        "post": "SearchTeamsForRetentionPolicy"
+    },
+    "/data_retention/policies/{policy_id}/channels": {
+        "get": "GetChannelsForRetentionPolicy",
+        "post": "AddChannelsToRetentionPolicy",
+        "delete": "RemoveChannelsFromRetentionPolicy"
+    },
+    "/users/{user_id}/status/custom/recent/delete": {
+        "post": "PostUserRecentCustomStatusDelete"
+    },
+    "/plugins/marketplace/first_admin_visit": {
+        "post": "UpdateMarketplaceVisitedByAdmin",
+        "get": "GetMarketplaceVisitedByAdmin"
+    },
+    "/sharedchannels/{team_id}": {
+        "get": "GetAllSharedChannels"
+    },
+    "/permissions/ancillary": {
+        "get": "GetAncillaryPermissions"
     }
 }

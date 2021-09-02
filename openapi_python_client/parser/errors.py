@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-__all__ = ["GeneratorError", "ParseError", "PropertyError", "ValidationError"]
+__all__ = ["GeneratorError", "ParseError", "OperationIdError", "PropertyError", "ValidationError"]
 
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ from pydantic import BaseModel
 class ErrorLevel(Enum):
     """ The level of an error """
 
+    INFO = "INFO"  
     WARNING = "WARNING"  # Client is still generated but missing some pieces
     ERROR = "ERROR"  # Client could not be generated
 
@@ -21,6 +22,15 @@ class GeneratorError:
     detail: Optional[str] = None
     level: ErrorLevel = ErrorLevel.ERROR
     header: str = "Unable to generate the client"
+
+
+@dataclass
+class OperationIdError:
+    """ Base data struct containing info on an error that occurred """
+
+    detail: Optional[str] = None
+    level: ErrorLevel = ErrorLevel.INFO
+    header: str = "Detected changes for API endpoints"
 
 
 @dataclass

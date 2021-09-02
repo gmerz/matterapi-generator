@@ -20,7 +20,7 @@ from collections import defaultdict
 from openapi_python_client import utils
 
 from .parser import GeneratorData, import_string_from_reference
-from .parser.errors import GeneratorError , ErrorLevel
+from .parser.errors import GeneratorError , ErrorLevel, OperationIdError
 from .utils import snake_case
 
 if sys.version_info.minor < 8:  # version did not exist before 3.8, need to use a backport
@@ -337,7 +337,7 @@ class Project:
         endpoint_sync_template = self.env.get_template("mattermost/endpoint_class_sync.py.jinja")
         endpoint_async_template = self.env.get_template("mattermost/endpoint_class_async.py.jinja")
 
-        oidmapping = defaultdict(dict)
+        oidmapping = dict()
         oidmapping_file = Path('operationid_mapping.json')
         if oidmapping_file.exists():
             with oidmapping_file.open() as mapfile:
@@ -354,14 +354,19 @@ class Project:
             for endpoint in collection.endpoints:
                 # Cleanup some things in the description
                 #endpoint.description = self._clean_description(endpoint.description)
-                oldoid = oidmapping[endpoint.path].get(endpoint.method, None)
+                oidpath = oidmapping.get(endpoint.path, None)
+                oldoid = None
+                if oidpath:
+                    oldoid = oidpath.get(endpoint.method, None)
+                else:
+                    oidmapping[endpoint.path] = dict()
                 if oldoid:
                     if endpoint.name != oldoid:
-                        self.errors.append( GeneratorError(detail=f'Operation ids for path `{endpoint.method.upper()} - {endpoint.path}` do not match. New: `{endpoint.name}`, Old: `{oldoid}`. Using old one. Update the mapping file if necessary', level=ErrorLevel.WARNING ))
+                        self.errors.append( OperationIdError(detail=f'Operation ids for path `{endpoint.method.upper()} - {endpoint.path}` do not match. New: `{endpoint.name}`, Old: `{oldoid}`. Using old one. Update the mapping file if necessary', level=ErrorLevel.WARNING ))
                     endpoint.name = oldoid
                 else: 
                     oidmapping[endpoint.path][endpoint.method] = endpoint.name
-                    self.errors.append( GeneratorError(detail=f'New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct', level=ErrorLevel.WARNING ))
+                    self.errors.append( OperationIdError(detail=f'New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct', level=ErrorLevel.WARNING ))
                 # Hack to filter out duplicate 'None' responses and make the ordering for generated return types stable
                 response_types = set()
                 for response in endpoint.responses:
