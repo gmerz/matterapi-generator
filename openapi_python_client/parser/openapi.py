@@ -261,6 +261,7 @@ class Endpoint:
                         detail=(
                             f"Cannot parse response for status code {status_code}, "
                             f"response will be ommitted from generated client"
+                            f"\nReason: {response.detail}"
                         ),
                         data=response.data,
                     )

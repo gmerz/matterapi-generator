@@ -1,6 +1,6 @@
 from typing import Any, Dict, Type, TypeVar, Optional, ClassVar, Set, List
 
-from .types import BaseConfig
+from .types import BaseConfig, BaseMapping, BaseArray
 
 {% for model, file_properties in models %}
 {% for relative in model.relative_imports %}
@@ -10,49 +10,82 @@ from .types import BaseConfig
 {% endfor %}
 {% endfor %}
 
+
+{% macro generate_class(model) %}
+{% if model.additional_properties %}
+{% set additional_property_type = 'Any' if model.additional_properties == True else model.additional_properties.get_type_string() %}
+class {{ model.reference.class_name }}(BaseMapping):
+{% elif model.model_type == 'array' -%}
+class {{ model.reference.class_name }}(BaseArray):
+{% else -%}
+class {{ model.reference.class_name }}(BaseConfig):
+{% endif %}
+    """{% if model.title %}{{ model.title | wordwrap(116) }}
+
+    {% endif -%}
+    {%- if model.description %}{{ model.description | wordwrap(116) }}
+
+    {% endif %}
+    {% if not model.title and not model.description %}
+    {# Leave extra space so that a section doesn't start on the first line #}
+
+    {% endif %}
+    {% if model.example %}
+    Example:
+        {{ model.example | string | wordwrap(112) | indent(12) }}
+
+    {% endif %}
+    {% if model.required_properties or model.optional_properties %}
+    Attributes:
+    {% for property in model.required_properties + model.optional_properties %}
+        {{ property.to_docstring() | wordwrap(112) | indent(12) }}
+    {% endfor %}{% endif %}
+    """
+    
+    {% if model.model_type == 'array' %}
+    __root__:  {{ model.array_items_property.get_base_type_string() }}
+    {% endif %}
+    {% if model.additional_properties %}
+    __root__:  Dict[str,{{ additional_property_type }}]
+    {% endif %}
+    {{ generate_properties(model) | indent(4) }}
+{% endmacro %}
+
 {% macro generate_properties(model) %}
 {% for property in model.required_properties + model.optional_properties %}
 {% if property.child_model  %}
-class {{ property.reference.class_name }}(BaseConfig):
-    {% filter indent(width=4) %}
+{{ generate_class(property) }}
+{#class {{ property.reference.class_name }}(BaseConfig):
+    {% if property.additional_properties %}
+    {% set additional_property_type = 'Any' if property.additional_properties == True else property.additional_properties.get_type_string() %}
+    __root__:  Dict[str,{{ additional_property_type }}]
+    {% endif %}
+    {% if (property.required_properties + property.optional_properties)|length %}
+    {% if property.description %}
     """ {{ property.description }} """
-    {{ generate_properties(property) }}
-    {% endfilter %}
+    {% endif %}
+    {{ generate_properties(property) | indent(4) }}
+    {% else %}
+    pass
+  {% endif %} #}
 {% endif %}
 {% endfor %}
 {% for property in model.required_properties + model.optional_properties %}
 {% if property.default is none and property.required %}
 {{ property.to_string() | indent(4) }}
-{% if property.description %}
-""" {{property.description | indent(4) }}
-"""
-{% endif %}
 {% endif %}
 {% endfor %}
 {% for property in model.required_properties + model.optional_properties %}
 {% if property.default is not none or not property.required %}
 {{ property.to_string() | indent(4) }}
-{% if property.description %}
-""" {{property.description | indent(4) }}
-"""
-{% endif %}
 {% endif %}
 {% endfor %}
 {% endmacro %}
 {% for model, file_properties in models %}
-{% if model.additional_properties %}
-{% set additional_property_type = 'Any' if model.additional_properties == True else model.additional_properties.get_type_string() %}
-{% endif %}
 {#
 T = TypeVar("T", bound="{{ model.reference.class_name }}")
 #}
-
-class {{ model.reference.class_name }}(BaseConfig):
-    """ {{ model.description }} """
-    {% filter indent(width=4) %}
-    {{ generate_properties(model) }}
-    {% endfilter %}
-
+{{ generate_class(model) }}
     {% if file_properties %}
     _file_properties: ClassVar[Set[str]] = set({{ file_properties }})
     """Properties to be included into `files` parameter of request"""
@@ -86,6 +119,7 @@ class {{ model.reference.class_name }}(BaseConfig):
         """
         return self.dict(exclude=self._file_properties,exclude_none=True)
     {% endif %}
+
 {% endfor %}
 
     {#    {% if model.additional_properties %}

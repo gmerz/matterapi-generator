@@ -252,7 +252,8 @@ def _string_based_property(
             default=convert("datetime.datetime", data.default),
             nullable=data.nullable,
             description=data.description,
-        )
+            example=data.example,
+            )
     elif string_format == "date":
         return DateProperty(
             name=name,
@@ -260,6 +261,7 @@ def _string_based_property(
             default=convert("datetime.date", data.default),
             nullable=data.nullable,
             description=data.description,
+            example=data.example,
         )
     elif string_format == "binary":
         return FileProperty(
@@ -268,6 +270,7 @@ def _string_based_property(
             default=None,
             nullable=data.nullable,
             description=data.description,
+            example=data.example,
         )
     else:
         return StringProperty(
@@ -277,6 +280,7 @@ def _string_based_property(
             pattern=data.pattern,
             nullable=data.nullable,
             description=data.description,
+            example=data.example,
         )
 
 
@@ -348,6 +352,7 @@ def build_enum_property(
         values=values,
         value_type=value_type,
         description=data.description,
+        example=data.example,
     )
     schemas = attr.evolve(schemas, enums={**schemas.enums, prop.reference.class_name: prop})
     return prop, schemas
@@ -374,6 +379,7 @@ def build_union_property(
             inner_properties=sub_properties,
             nullable=data.nullable,
             description=data.description,
+            example=data.example,
         ),
         schemas,
     )
@@ -397,6 +403,7 @@ def build_list_property(
             inner_property=inner_prop,
             nullable=data.nullable,
             description=data.description,
+            example=data.example,
         ),
         schemas,
     )
@@ -457,6 +464,7 @@ def _property_from_data(
                 required=required,
                 nullable=data.nullable,
                 description=data.description,
+                example=data.example,
             ),
             schemas,
         )
@@ -468,6 +476,7 @@ def _property_from_data(
                 required=required,
                 nullable=data.nullable,
                 description=data.description,
+                example=data.example,
             ),
             schemas,
         )
@@ -479,6 +488,7 @@ def _property_from_data(
                 default=convert("bool", data.default),
                 nullable=data.nullable,
                 description=data.description,
+                example=data.example,
             ),
             schemas,
         )

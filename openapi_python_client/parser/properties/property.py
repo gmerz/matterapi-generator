@@ -28,6 +28,7 @@ class Property:
     default: Optional[str] = attr.ib()
     python_name: str = attr.ib(init=False)
     description: Optional[str] = attr.ib(default=None,kw_only=True)
+    example: Optional[str] = attr.ib()
 
 
     template: ClassVar[Optional[str]] = None
@@ -103,3 +104,12 @@ class Property:
             return f"{self.python_name}: {self.get_type_string()} = None"
         else:
             return f"{self.python_name}: {self.get_type_string()}"
+
+    def to_docstring(self) -> str:
+        """Returns property docstring"""
+        doc = f"{self.python_name} ({self.get_type_string()}): {self.description or ''}"
+        if self.default:
+            doc += f" Default: {self.default}."
+        if self.example:
+            doc += f" Example: {self.example}."
+        return doc

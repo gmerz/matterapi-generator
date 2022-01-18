@@ -20,13 +20,15 @@ class ModelProperty(Property):
     optional_properties: List[Property]
     description: str
     relative_imports: Set[str]
-    additional_properties: Union[bool, Property]
+    additional_properties: Union[bool, Property] = False
     _json_type_string: ClassVar[str] = "Dict[str, Any]"
 
     template: ClassVar[str] = "model_property.py.jinja"
     json_is_dict: ClassVar[bool] = True
     parent_name: str = ""
     child_model: bool = False
+    model_type: str = "object"
+    array_items_property: Optional[Property] = None
 
     def get_type_string(self, no_optional: bool = False) -> str:
         """ Get a string representation of type that should be used when declaring this property """
@@ -151,7 +153,7 @@ def _get_additional_properties(
     from . import property_from_data
 
     if schema_additional is None:
-        return True, schemas
+        return False, schemas
 
     if isinstance(schema_additional, bool):
         return schema_additional, schemas
@@ -185,6 +187,7 @@ def build_model_property(
         required: Whether or not this property is required by the parent (affects typing)
         parent_name: The name of the property that this property is inside of (affects class naming)
     """
+    from . import build_list_property
     class_name = data.title or name
     if parent_name:
         if child_property:
@@ -193,6 +196,8 @@ def build_model_property(
         else:
             class_name = f"{utils.pascal_case(parent_name)}{utils.pascal_case(class_name)}"
     ref = Reference.from_ref(class_name)
+
+
 
     property_data = _process_properties(data=data, schemas=schemas, class_name=class_name)
     if isinstance(property_data, PropertyError):
@@ -207,6 +212,12 @@ def build_model_property(
     elif isinstance(additional_properties, PropertyError):
         return additional_properties, schemas
 
+
+    array_prop = None
+    if data.type == "array":
+        array_prop, schemas = build_list_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
+
+
     prop = ModelProperty(
         reference=ref,
         required_properties=property_data.required_props,
@@ -220,8 +231,10 @@ def build_model_property(
         additional_properties=additional_properties,
         parent_name = parent_name,
         child_model = child_property,
+        example=data.example,
+        model_type = data.type if data.type else "object",
+        array_items_property = array_prop,
     )
-
 
     if child_property:
         return prop, schemas
