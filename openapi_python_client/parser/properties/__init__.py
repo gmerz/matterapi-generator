@@ -425,6 +425,7 @@ def _property_from_data(
     data: Union[oai.Reference, oai.Schema],
     schemas: Schemas,
     parent_name: str,
+    child_property: bool = False,
 ) -> Tuple[Union[Property, PropertyError], Schemas]:
     """ Generate a Property from the OpenAPI dictionary representation of it """
     name = utils.remove_string_escapes(name)
@@ -484,7 +485,7 @@ def _property_from_data(
     elif data.type == "array":
         return build_list_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
     elif data.type == "object" or data.allOf:
-        return build_model_property(data=data, name=name, schemas=schemas, required=required, parent_name=parent_name)
+        return build_model_property(data=data, name=name, schemas=schemas, required=required, parent_name=parent_name, child_property=child_property)
 #    elif not data.type:
 #        return NoneProperty(name=name, required=required, nullable=False, default=None), schemas
     return PropertyError(data=data, detail=f"unknown type {data.type}"), schemas
@@ -498,11 +499,12 @@ def property_from_data(
     data: Union[oai.Reference, oai.Schema],
     schemas: Schemas,
     parent_name: str,
+    child_property: bool = False,
 ) -> Tuple[Union[Property, PropertyError], Schemas]:
     if 'description' in data.__dict__:
         data.description = utils.clean_description(data.description)
     try:
-        return _property_from_data(name=name, required=required, data=data, schemas=schemas, parent_name=parent_name)
+        return _property_from_data(name=name, required=required, data=data, schemas=schemas, parent_name=parent_name, child_property=child_property)
     except ValidationError:
         return PropertyError(detail="Failed to validate default value", data=data), schemas
 

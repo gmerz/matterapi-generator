@@ -10,6 +10,35 @@ from .types import BaseConfig
 {% endfor %}
 {% endfor %}
 
+{% macro generate_properties(model) %}
+{% for property in model.required_properties + model.optional_properties %}
+{% if property.child_model  %}
+class {{ property.reference.class_name }}(BaseConfig):
+    {% filter indent(width=4) %}
+    """ {{ property.description }} """
+    {{ generate_properties(property) }}
+    {% endfilter %}
+{% endif %}
+{% endfor %}
+{% for property in model.required_properties + model.optional_properties %}
+{% if property.default is none and property.required %}
+{{ property.to_string() | indent(4) }}
+{% if property.description %}
+""" {{property.description | indent(4) }}
+"""
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for property in model.required_properties + model.optional_properties %}
+{% if property.default is not none or not property.required %}
+{{ property.to_string() | indent(4) }}
+{% if property.description %}
+""" {{property.description | indent(4) }}
+"""
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endmacro %}
 {% for model, file_properties in models %}
 {% if model.additional_properties %}
 {% set additional_property_type = 'Any' if model.additional_properties == True else model.additional_properties.get_type_string() %}
@@ -17,27 +46,12 @@ from .types import BaseConfig
 {#
 T = TypeVar("T", bound="{{ model.reference.class_name }}")
 #}
+
 class {{ model.reference.class_name }}(BaseConfig):
     """ {{ model.description }} """
-
-    {% for property in model.required_properties + model.optional_properties %}
-    {% if property.default is none and property.required %}
-    {{ property.to_string() | indent(4) }}
-    {% if property.description %}
-    """ {{property.description | indent(4) }}
-    """
-    {% endif %}
-    {% endif %}
-    {% endfor %}
-    {% for property in model.required_properties + model.optional_properties %}
-    {% if property.default is not none or not property.required %}
-    {{ property.to_string() | indent(4) }}
-    {% if property.description %}
-    """ {{property.description | indent(4) }}
-    """
-    {% endif %}
-    {% endif %}
-  {% endfor %}
+    {% filter indent(width=4) %}
+    {{ generate_properties(model) }}
+    {% endfilter %}
 
     {% if file_properties %}
     _file_properties: ClassVar[Set[str]] = set({{ file_properties }})

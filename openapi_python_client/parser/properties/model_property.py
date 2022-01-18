@@ -25,6 +25,8 @@ class ModelProperty(Property):
 
     template: ClassVar[str] = "model_property.py.jinja"
     json_is_dict: ClassVar[bool] = True
+    parent_name: str = ""
+    child_model: bool = False
 
     def get_type_string(self, no_optional: bool = False) -> str:
         """ Get a string representation of type that should be used when declaring this property """
@@ -117,7 +119,7 @@ def _process_properties(*, data: oai.Schema, schemas: Schemas, class_name: str) 
     for key, value in unprocessed_props.items():
         prop_required = key in required_set
         prop_or_error, schemas = property_from_data(
-            name=key, required=prop_required, data=value, schemas=schemas, parent_name=class_name
+            name=key, required=prop_required, data=value, schemas=schemas, parent_name=class_name, child_property = True
         )
         if isinstance(prop_or_error, Property):
             prop_or_error = _check_existing(prop_or_error)
@@ -164,12 +166,13 @@ def _get_additional_properties(
         data=schema_additional,
         schemas=schemas,
         parent_name=class_name,
+        child_property = True,
     )
     return additional_properties, schemas
 
 
 def build_model_property(
-    *, data: oai.Schema, name: str, schemas: Schemas, required: bool, parent_name: Optional[str]
+        *, data: oai.Schema, name: str, schemas: Schemas, required: bool, parent_name: Optional[str], child_property: Optional[bool] = False
 ) -> Tuple[Union[ModelProperty, PropertyError], Schemas]:
     """
     A single ModelProperty from its OAI data
@@ -184,7 +187,11 @@ def build_model_property(
     """
     class_name = data.title or name
     if parent_name:
-        class_name = f"{utils.pascal_case(parent_name)}{utils.pascal_case(class_name)}"
+        if child_property:
+            #class_name = f"{utils.pascal_case(parent_name)}_{utils.pascal_case(class_name)}"
+            class_name = f"{utils.pascal_case(class_name)}"
+        else:
+            class_name = f"{utils.pascal_case(parent_name)}{utils.pascal_case(class_name)}"
     ref = Reference.from_ref(class_name)
 
     property_data = _process_properties(data=data, schemas=schemas, class_name=class_name)
@@ -211,7 +218,14 @@ def build_model_property(
         required=required,
         name=name,
         additional_properties=additional_properties,
+        parent_name = parent_name,
+        child_model = child_property,
     )
+
+
+    if child_property:
+        return prop, schemas
+
     if prop.reference.class_name in schemas.models:
         error = PropertyError(
             data=data, detail=f'Attempted to generate duplicate models with name "{prop.reference.class_name}"'

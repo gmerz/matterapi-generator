@@ -1049,5 +1049,23 @@
     },
     "/permissions/ancillary": {
         "get": "GetAncillaryPermissions"
+    },
+    "/trial-license/prev": {
+        "get": "get_trial-license_prev"
+    },
+    "/roles": {
+        "get": "get_roles"
+    },
+    "/users/{user_id}/channel_members": {
+        "get": "GetChannelMembersWithTeamDataForUser"
+    },
+    "/users/{user_id}/channels": {
+        "get": "GetChannelsForUser"
+    },
+    "/posts/ids": {
+        "post": "getPostsByIds"
+    },
+    "/data_retention/policies/{policy_id}/channels/search": {
+        "post": "SearchChannelsForRetentionPolicy"
     }
 }
