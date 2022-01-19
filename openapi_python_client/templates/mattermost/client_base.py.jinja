@@ -73,6 +73,8 @@ class BaseClient(BaseModel):
                 raise ContentTooLarge(message) from e
             elif e.response.status_code == 429:
                 raise TooManyRequests(message) from e
+            elif e.response.status_code == 500:
+                raise InternalServerError(message) from e
             elif e.response.status_code == 501:
                 raise FeatureDisabled(message) from e
             else:

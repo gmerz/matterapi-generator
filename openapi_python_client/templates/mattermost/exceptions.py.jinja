@@ -49,6 +49,13 @@ class TooManyRequests(ApiError):
 	429 Too many requests
 	"""
 
+
+class InternalServerError(ApiError):
+	"""
+	Raised when mattermost returns a
+	500 Internal Server Error
+	"""
+
 class FeatureDisabled(ApiError):
 	"""
 	Raised when mattermost returns a

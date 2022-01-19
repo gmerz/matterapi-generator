@@ -1054,7 +1054,7 @@
         "get": "get_trial-license_prev"
     },
     "/roles": {
-        "get": "get_roles"
+        "get": "GetAllRoles"
     },
     "/users/{user_id}/channel_members": {
         "get": "GetChannelMembersWithTeamDataForUser"

@@ -370,7 +370,10 @@ class Project:
                     self.errors.append( OperationIdError(detail=f'New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct', level=ErrorLevel.WARNING ))
                 # Hack to filter out duplicate 'None' responses and make the ordering for generated return types stable
                 response_types = set()
+                exception_codes = [400, 401, 403, 404, 405, 413, 429, 500, 501]
                 for response in endpoint.responses:
+                    if response.prop.get_type_string() == "None" and response.status_code in exception_codes:
+                        continue
                     response_types.add(response.prop.get_type_string())
                 if 'None' in response_types:
                     response_types.remove('None')
