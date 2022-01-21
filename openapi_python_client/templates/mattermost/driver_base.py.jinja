@@ -67,7 +67,7 @@ class DriverOptions(BaseModel):
     ws_reconnect_wait_time: int = 5
     """ The waiting time between re-connect attempts for websocket connections """
     skip_response_parsing: bool = False
-    """ If this is set, responses will not be parsed into objects, but will be returned as raw httpx requests """
+    """ If this is set, responses will not be parsed into objects, but will be returned as raw httpx response """
 
     @validator("ws_url", pre=True, always=True)
     def _ws_url_setter(cls, v, values):

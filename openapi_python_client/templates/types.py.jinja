@@ -1,5 +1,5 @@
 """ Contains some shared types for properties """
-from typing import BinaryIO, Generic, MutableMapping, Optional, TextIO, Tuple, TypeVar, Union, Any, Dict
+from typing import BinaryIO, Generic, MutableMapping, Optional, TextIO, Tuple, TypeVar, Union, Any, Dict, List
 
 from pydantic import BaseModel
 
@@ -9,7 +9,6 @@ class BaseConfig(BaseModel):
       extra = 'allow'
       exclude_defaults = True
       fields = {'fields': 'fields_'}
-
 
 
 class BaseMapping(BaseConfig):
@@ -67,8 +66,6 @@ class BaseMapping(BaseConfig):
 
     def __unicode__(self):
         return unicode(repr(self.__root__))
-
-
 
 
 class BaseArray(BaseConfig):
@@ -132,7 +129,6 @@ class BaseArray(BaseConfig):
 
     def __unicode__(self):
         return unicode(repr(self.__root__))
-
 
 
 
