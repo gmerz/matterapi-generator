@@ -11,7 +11,7 @@ from pydantic import BaseModel
 {% from "endpoint_macros.py.jinja" import header_params, cookie_params, query_params, json_body, return_type, arguments, client, kwargs, parse_response %}
 
 class {{tag}}Api(ApiBaseClass):
-    """ {{description}} """
+    """ {{description | wordwrap(72) if description }} """
 {% for endpoint in collection.endpoints %}
 {% set return_string = return_type(endpoint) %}
 {% set parsed_responses = (endpoint.responses | length > 0) and return_string != "None" %}
@@ -20,9 +20,9 @@ class {{tag}}Api(ApiBaseClass):
     async def {{endpoint.name | snakecase}}(self,
     {{ arguments(endpoint) | indent(8) }}
     ) -> {{ return_string | indent(8)}}:
-        """{{ endpoint.summary | indent(8)}} 
+        """{{ endpoint.summary | wordwrap(72) | indent(8) if endpoint.summary}} 
 
-        {{ endpoint.description | indent(8)}} 
+        {{ endpoint.description | wordwrap(72) | indent(8) if endpoint.description}} 
         """
 
         url = "{}{{ endpoint.path }}".format(
@@ -76,7 +76,7 @@ class {{tag}}Api(ApiBaseClass):
             **request_kwargs,
         )
 
-        if self.skip_response_parsing == True:
+        if self.skip_response_parsing:
             return response
 
         {% for response in endpoint.responses %}

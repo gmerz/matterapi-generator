@@ -4,6 +4,7 @@ import httpx
 
 from .base import BaseDriver,AuthToken, AuthLogin
 from .client import SyncClient, SyncAuthenticatedClient
+from .exceptions import ApiError
 from ..models import User
 
 from pydantic import PrivateAttr

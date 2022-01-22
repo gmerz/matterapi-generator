@@ -20,10 +20,10 @@ class {{ model.reference.class_name }}(BaseArray):
 {% else -%}
 class {{ model.reference.class_name }}(BaseConfig):
 {% endif %}
-    """{% if model.title %}{{ model.title | wordwrap(116) }}
+    """{% if model.title %}{{ model.title | wordwrap(72) }}
 
     {% endif -%}
-    {%- if model.description %}{{ model.description | wordwrap(116) }}
+    {%- if model.description %}{{ model.description | wordwrap(72) }}
 
     {% endif %}
     {% if not model.title and not model.description %}
@@ -32,13 +32,13 @@ class {{ model.reference.class_name }}(BaseConfig):
     {% endif %}
     {% if model.example %}
     Example:
-        {{ model.example | string | wordwrap(112) | indent(12) }}
+        {{ model.example | string | wordwrap(72) | indent(12) }}
 
     {% endif %}
     {% if model.required_properties or model.optional_properties %}
     Attributes:
     {% for property in model.required_properties + model.optional_properties %}
-        {{ property.to_docstring() | wordwrap(112) | indent(12) }}
+        {{ property.to_docstring() | wordwrap(72) | indent(12) }}
     {% endfor %}{% endif %}
     """
     
