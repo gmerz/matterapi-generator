@@ -112,12 +112,18 @@ T = TypeVar("T", bound="{{ model.reference.class_name }}")
                 response.update({name: value})
         return response
 
+    {% endif %}
+    {% if model.name == "multipart_data" %}
     def get_data(self):
         """Get the `data` attributes for the request from the model
 
         :meta private:
         """
+        {% if file_properties %}
         return self.dict(exclude=self._file_properties,exclude_none=True)
+        {% else %}
+        return self.dict(exclude_none=True)
+        {% endif %}
     {% endif %}
 
 {% endfor %}
