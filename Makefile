@@ -4,8 +4,8 @@ all:
 	poetry install
 
 create:
-	poetry run openapi-python-client --config config-openapi-python-client.yaml generate --path swagger.json
+	poetry run openapi-python-client generate --config config-openapi-python-client.yaml --path swagger.json
 	
 update:
-	poetry run openapi-python-client --config config-openapi-python-client.yaml update --path swagger.json
+	poetry run openapi-python-client update --config config-openapi-python-client.yaml --path swagger.json
 

@@ -13,7 +13,7 @@ from .schemas import Schemas
 
 @attr.s(auto_attribs=True, frozen=True)
 class ModelProperty(Property):
-    """ A property which refers to another Schema """
+    """A property which refers to another Schema"""
 
     reference: Reference
     required_properties: List[Property]
@@ -31,16 +31,16 @@ class ModelProperty(Property):
     array_items_property: Optional[Property] = None
 
     def get_type_string(self, no_optional: bool = False) -> str:
-        """ Get a string representation of type that should be used when declaring this property """
+        """Get a string representation of type that should be used when declaring this property"""
         type_string = self.reference.class_name
         if no_optional:
             return type_string
         if self.nullable:
-            #type_string = f"Union[{type_string}, None]"
+            # type_string = f"Union[{type_string}, None]"
             type_string = f"Optional[{type_string}]"
         if not self.required:
             type_string = f"Optional[{type_string}]"
-            #type_string = f"Optional[{type_string}]"
+            # type_string = f"Optional[{type_string}]"
         return type_string
 
     def get_base_type_string(self, json: bool = False) -> str:
@@ -57,7 +57,7 @@ class ModelProperty(Property):
         imports = super().get_imports(prefix=prefix)
         imports.update(
             {
-               # f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}",
+                # f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}",
                 f"from {prefix}models import {self.reference.class_name}",
                 "from typing import Dict",
                 "from typing import cast",
@@ -121,7 +121,7 @@ def _process_properties(*, data: oai.Schema, schemas: Schemas, class_name: str) 
     for key, value in unprocessed_props.items():
         prop_required = key in required_set
         prop_or_error, schemas = property_from_data(
-            name=key, required=prop_required, data=value, schemas=schemas, parent_name=class_name, child_property = True
+            name=key, required=prop_required, data=value, schemas=schemas, parent_name=class_name, child_property=True
         )
         if isinstance(prop_or_error, Property):
             prop_or_error = _check_existing(prop_or_error)
@@ -168,13 +168,19 @@ def _get_additional_properties(
         data=schema_additional,
         schemas=schemas,
         parent_name=class_name,
-        child_property = True,
+        child_property=True,
     )
     return additional_properties, schemas
 
 
 def build_model_property(
-        *, data: oai.Schema, name: str, schemas: Schemas, required: bool, parent_name: Optional[str], child_property: Optional[bool] = False
+    *,
+    data: oai.Schema,
+    name: str,
+    schemas: Schemas,
+    required: bool,
+    parent_name: Optional[str],
+    child_property: Optional[bool] = False,
 ) -> Tuple[Union[ModelProperty, PropertyError], Schemas]:
     """
     A single ModelProperty from its OAI data
@@ -188,16 +194,15 @@ def build_model_property(
         parent_name: The name of the property that this property is inside of (affects class naming)
     """
     from . import build_list_property
+
     class_name = data.title or name
     if parent_name:
         if child_property:
-            #class_name = f"{utils.pascal_case(parent_name)}_{utils.pascal_case(class_name)}"
+            # class_name = f"{utils.pascal_case(parent_name)}_{utils.pascal_case(class_name)}"
             class_name = f"{utils.pascal_case(class_name)}"
         else:
             class_name = f"{utils.pascal_case(parent_name)}{utils.pascal_case(class_name)}"
     ref = Reference.from_ref(class_name)
-
-
 
     property_data = _process_properties(data=data, schemas=schemas, class_name=class_name)
     if isinstance(property_data, PropertyError):
@@ -212,11 +217,11 @@ def build_model_property(
     elif isinstance(additional_properties, PropertyError):
         return additional_properties, schemas
 
-
     array_prop = None
     if data.type == "array":
-        array_prop, schemas = build_list_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
-
+        array_prop, schemas = build_list_property(
+            data=data, name=name, required=required, schemas=schemas, parent_name=parent_name
+        )
 
     prop = ModelProperty(
         reference=ref,
@@ -229,11 +234,11 @@ def build_model_property(
         required=required,
         name=name,
         additional_properties=additional_properties,
-        parent_name = parent_name,
-        child_model = child_property,
+        parent_name=parent_name,
+        child_model=child_property,
         example=data.example,
-        model_type = data.type if data.type else "object",
-        array_items_property = array_prop,
+        model_type=data.type if data.type else "object",
+        array_items_property=array_prop,
     )
 
     if child_property:

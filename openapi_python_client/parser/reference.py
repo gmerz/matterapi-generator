@@ -10,14 +10,14 @@ class_overrides: Dict[str, "Reference"] = {}
 
 @dataclass
 class Reference:
-    """ A reference to a class which will be in models """
+    """A reference to a class which will be in models"""
 
     class_name: str
     module_name: str
 
     @staticmethod
     def from_ref(ref: str) -> "Reference":
-        """ Get a Reference from the openapi #/schemas/blahblah string """
+        """Get a Reference from the openapi #/schemas/blahblah string"""
         ref_value = ref.split("/")[-1]
         class_name = utils.pascal_case(ref_value)
 

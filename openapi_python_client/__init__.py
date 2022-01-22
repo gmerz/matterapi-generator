@@ -1,26 +1,28 @@
 """ Generate modern Python clients from OpenPI """
 
-from openapi_python_client.parser.properties import FileProperty, NoneProperty
+import json
+import re
 import shutil
 import subprocess
 import sys
+import textwrap
+from collections import defaultdict
 from enum import Enum
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import Any, Dict, Optional, Sequence, Union
 
 import httpcore
 import httpx
 import yaml
-import json
-import re
-import textwrap
 from jinja2 import BaseLoader, ChoiceLoader, Environment, FileSystemLoader, PackageLoader
-from collections import defaultdict
 
 from openapi_python_client import utils
+from openapi_python_client.parser.properties import FileProperty, NoneProperty
 
+from .config import Config
 from .parser import GeneratorData, import_string_from_reference
-from .parser.errors import GeneratorError , ErrorLevel, OperationIdError
+from .parser.errors import ErrorLevel, GeneratorError, OperationIdError
 from .utils import snake_case
 
 if sys.version_info.minor < 8:  # version did not exist before 3.8, need to use a backport
@@ -28,7 +30,7 @@ if sys.version_info.minor < 8:  # version did not exist before 3.8, need to use 
 else:
     from importlib.metadata import version  # type: ignore
 
-#__version__ = version(__package__)
+# __version__ = version(__package__)
 __version__ = "0.0.1"
 
 
@@ -46,23 +48,20 @@ TEMPLATE_FILTERS = {
 }
 
 
-
 class Project:
-    project_name_override: Optional[str] = None
-    package_name_override: Optional[str] = None
-    package_version_override: Optional[str] = None
-
     def __init__(
         self,
         *,
         openapi: GeneratorData,
         meta: MetaType,
+        config: Config,
         custom_template_path: Optional[Path] = None,
         file_encoding: str = "utf-8",
     ) -> None:
         self.openapi: GeneratorData = openapi
         self.meta: MetaType = meta
         self.file_encoding = file_encoding
+        self.config = config
 
         package_loader = PackageLoader(__package__)
         loader: BaseLoader
@@ -77,23 +76,23 @@ class Project:
             loader = package_loader
         self.env: Environment = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
 
-        self.project_name: str = self.project_name_override or f"{utils.kebab_case(openapi.title).lower()}-client"
+        self.project_name: str = config.project_name_override or f"{utils.kebab_case(openapi.title).lower()}-client"
         self.project_dir: Path = Path.cwd()
         if meta != MetaType.NONE:
             self.project_dir /= self.project_name
 
-        self.package_name: str = self.package_name_override or self.project_name.replace("-", "_")
+        self.package_name: str = config.package_name_override or self.project_name.replace("-", "_")
         self.package_dir: Path = self.project_dir / self.package_name
         self.package_description: str = utils.remove_string_escapes(
             f"A client library for accessing {self.openapi.title}"
         )
-        self.version: str = self.package_version_override or openapi.version
+        self.version: str = config.package_version_override or openapi.version
 
         self.env.filters.update(TEMPLATE_FILTERS)
         self.errors = []
 
     def build(self) -> Sequence[GeneratorError]:
-        """ Create the project from templates """
+        """Create the project from templates"""
 
         if self.meta == MetaType.NONE:
             print(f"Generating {self.package_name}")
@@ -107,15 +106,15 @@ class Project:
         self._build_metadata()
         self._build_track_file()
         self._create_package()
-#        self._build_models()
+        #        self._build_models()
         self._build_models_file()
         self._build_api()
-#        self._build_api_modules()
-        self._reformat()
+        #        self._build_api_modules()
+        self._run_post_hooks()
         return self._get_errors()
 
     def update(self) -> Sequence[GeneratorError]:
-        """ Update an existing project """
+        """Update an existing project"""
 
         if not self.package_dir.is_dir():
             raise FileNotFoundError()
@@ -124,29 +123,39 @@ class Project:
         shutil.rmtree(self.package_dir)
         self._build_track_file()
         self._create_package()
-        #self._build_models()
+        # self._build_models()
         self._build_models_file()
         self._build_api()
-#        self._build_api_modules()
-        self._reformat()
+        #        self._build_api_modules()
+        self._run_post_hooks()
         return self._get_errors()
 
-    def _reformat(self) -> None:
-        subprocess.run(
-            "autoflake -i -r --remove-all-unused-imports --remove-unused-variables --ignore-init-module-imports .",
-            cwd=self.package_dir,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        subprocess.run(
-            "isort .",
-            cwd=self.project_dir,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        subprocess.run("black .", cwd=self.project_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    def _run_post_hooks(self) -> None:
+        for command in self.config.post_hooks:
+            self._run_command(command)
+
+    def _run_command(self, cmd: str) -> None:
+        cmd_name = cmd.split(" ")[0]
+        command_exists = shutil.which(cmd_name)
+        if not command_exists:
+            self.errors.append(
+                GeneratorError(
+                    level=ErrorLevel.WARNING, header="Skipping Integration", detail=f"{cmd_name} is not in PATH"
+                )
+            )
+            return
+        try:
+            subprocess.run(
+                cmd, cwd=self.project_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+            )
+        except CalledProcessError as err:
+            self.errors.append(
+                GeneratorError(
+                    level=ErrorLevel.ERROR,
+                    header=f"{cmd_name} failed",
+                    detail=err.stderr.decode() or err.output.decode(),
+                )
+            )
 
     def _get_errors(self) -> Sequence[GeneratorError]:
         errors = self.errors
@@ -240,7 +249,9 @@ class Project:
                 if isinstance(prop, FileProperty):
                     file_properties.append(prop.python_name)
             module_path = models_dir / f"{model.reference.module_name}.py"
-            module_path.write_text(model_template.render(model=model,file_properties=file_properties), encoding=self.file_encoding)
+            module_path.write_text(
+                model_template.render(model=model, file_properties=file_properties), encoding=self.file_encoding
+            )
             imports.append(import_string_from_reference(model.reference))
 
         # Generate enums
@@ -257,13 +268,12 @@ class Project:
         models_init_template = self.env.get_template("models_init.py.jinja")
         models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
 
-
     def _build_models_file(self) -> None:
         # Generate models
         models_dir = self.package_dir
-        #models_dir.mkdir()
+        # models_dir.mkdir()
         models_file = models_dir / "models.py"
-#        imports = []
+        #        imports = []
 
         model_template = self.env.get_template("models.py.jinja")
         models = self.openapi.models.values()
@@ -276,14 +286,14 @@ class Project:
             for prop in model.optional_properties:
                 if isinstance(prop, FileProperty):
                     file_properties.append(prop.python_name)
-            models_properties.append( (model, file_properties) )
+            models_properties.append((model, file_properties))
 
         models_file.write_text(model_template.render(models=models_properties), encoding=self.file_encoding)
 
         # Generate enums
         enums_template = self.env.get_template("enums.py.jinja")
-#        str_enum_template = self.env.get_template("str_enum.py.jinja")
-#        int_enum_template = self.env.get_template("int_enum.py.jinja")
+        #        str_enum_template = self.env.get_template("str_enum.py.jinja")
+        #        int_enum_template = self.env.get_template("int_enum.py.jinja")
         str_enums = []
         int_enums = []
         for enum in self.openapi.enums.values():
@@ -291,16 +301,15 @@ class Project:
                 int_enums.append(enum)
             else:
                 str_enums.append(enum)
-            #imports.append(import_string_from_reference(enum.reference))
-            
+            # imports.append(import_string_from_reference(enum.reference))
+
         module_path = models_dir / f"enums.py"
-        module_path.write_text(enums_template.render(int_enums=int_enums, str_enums=str_enums), encoding=self.file_encoding)
+        module_path.write_text(
+            enums_template.render(int_enums=int_enums, str_enums=str_enums), encoding=self.file_encoding
+        )
 
-#        models_init_template = self.env.get_template("models_init.py.jinja")
-#        models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
-
-
-
+    #        models_init_template = self.env.get_template("models_init.py.jinja")
+    #        models_init.write_text(models_init_template.render(imports=imports), encoding=self.file_encoding)
 
     def _build_track_file(self) -> None:
         # Generate File to track api endpoints and identify changes on upgrade
@@ -309,10 +318,9 @@ class Project:
         operations = []
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
             for endpoint in collection.endpoints:
-                operations.append(f'{snake_case(tag)}.{snake_case(endpoint.name)}')
+                operations.append(f"{snake_case(tag)}.{snake_case(endpoint.name)}")
 
-        track_file.write_text('\n'.join(sorted(operations)), encoding=self.file_encoding)
-
+        track_file.write_text("\n".join(sorted(operations)), encoding=self.file_encoding)
 
     def _build_api(self) -> None:
         # Generate Client
@@ -324,22 +332,22 @@ class Project:
         baseclass_template = self.env.get_template("base.py.jinja")
         baseclass_path.write_text(baseclass_template.render(), encoding=self.file_encoding)
         # Generate endpoints
-        #api_dir = self.package_dir / "api"
+        # api_dir = self.package_dir / "api"
         endpoint_sync_dir = endpoint_dir / "sync_api"
         endpoint_sync_dir.mkdir()
-#        endpoint_sync_init = endpoint_sync_dir / "__init__.py"
-#        endpoint_sync_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
+        #        endpoint_sync_init = endpoint_sync_dir / "__init__.py"
+        #        endpoint_sync_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
 
         endpoint_async_dir = endpoint_dir / "async_api"
         endpoint_async_dir.mkdir()
-#        api_init = endpoint_sync_dir / "__init__.py"
-#        api_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
+        #        api_init = endpoint_sync_dir / "__init__.py"
+        #        api_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
 
         endpoint_sync_template = self.env.get_template("mattermost/endpoint_class_sync.py.jinja")
         endpoint_async_template = self.env.get_template("mattermost/endpoint_class_async.py.jinja")
 
         oidmapping = dict()
-        oidmapping_file = Path('operationid_mapping.json')
+        oidmapping_file = Path("operationid_mapping.json")
         if oidmapping_file.exists():
             with oidmapping_file.open() as mapfile:
                 oidmapping = json.loads(mapfile.read())
@@ -348,13 +356,13 @@ class Project:
         imports = []
         api_classes = []
 
-        tag_map = { snake_case(x.name) : utils.clean_description(x.description) for x in self.openapi.tags }
-        tag_map['authentication'] = "Endpoint related to authentication operations"
+        tag_map = {snake_case(x.name): utils.clean_description(x.description) for x in self.openapi.tags}
+        tag_map["authentication"] = "Endpoint related to authentication operations"
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
             tags.append(tag)
             for endpoint in collection.endpoints:
                 # Cleanup some things in the description
-                #endpoint.description = self._clean_description(endpoint.description)
+                # endpoint.description = self._clean_description(endpoint.description)
                 oidpath = oidmapping.get(endpoint.path, None)
                 oldoid = None
                 if oidpath:
@@ -363,11 +371,21 @@ class Project:
                     oidmapping[endpoint.path] = dict()
                 if oldoid:
                     if endpoint.name != oldoid:
-                        self.errors.append( OperationIdError(detail=f'Operation ids for path `{endpoint.method.upper()} - {endpoint.path}` do not match. New: `{endpoint.name}`, Old: `{oldoid}`. Using old one. Update the mapping file if necessary', level=ErrorLevel.WARNING ))
+                        self.errors.append(
+                            OperationIdError(
+                                detail=f"Operation ids for path `{endpoint.method.upper()} - {endpoint.path}` do not match. New: `{endpoint.name}`, Old: `{oldoid}`. Using old one. Update the mapping file if necessary",
+                                level=ErrorLevel.WARNING,
+                            )
+                        )
                     endpoint.name = oldoid
-                else: 
+                else:
                     oidmapping[endpoint.path][endpoint.method] = endpoint.name
-                    self.errors.append( OperationIdError(detail=f'New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct', level=ErrorLevel.WARNING ))
+                    self.errors.append(
+                        OperationIdError(
+                            detail=f"New path `{endpoint.method.upper()} - {endpoint.path}` with operation id `{endpoint.name}`. Update the mapping file and rerun, if this name is not correct",
+                            level=ErrorLevel.WARNING,
+                        )
+                    )
                 # Hack to filter out duplicate 'None' responses and make the ordering for generated return types stable
                 response_types = set()
                 exception_codes = [400, 401, 403, 404, 405, 413, 429, 500, 501]
@@ -375,35 +393,50 @@ class Project:
                     if response.prop.get_type_string() == "None" and response.status_code in exception_codes:
                         continue
                     response_types.add(response.prop.get_type_string())
-                if 'None' in response_types:
-                    response_types.remove('None')
-                    response_types = sorted(response_types) + ['None']
+                if "None" in response_types:
+                    response_types.remove("None")
+                    response_types = sorted(response_types) + ["None"]
                 else:
                     response_types = sorted(response_types)
                 endpoint.response_types = response_types
 
-
             endpoint_sync_path = endpoint_sync_dir / f"{snake_case(tag)}.py"
-            endpoint_sync_path.write_text(endpoint_sync_template.render(tag=utils.pascal_case(tag),collection=collection,description=tag_map.setdefault(snake_case(tag))), encoding=self.file_encoding)
+            endpoint_sync_path.write_text(
+                endpoint_sync_template.render(
+                    tag=utils.pascal_case(tag), collection=collection, description=tag_map.setdefault(snake_case(tag))
+                ),
+                encoding=self.file_encoding,
+            )
 
             endpoint_async_path = endpoint_async_dir / f"{snake_case(tag)}.py"
-            endpoint_async_path.write_text(endpoint_async_template.render(tag=utils.pascal_case(tag),collection=collection,description=tag_map.setdefault(snake_case(tag),'')), encoding=self.file_encoding)
+            endpoint_async_path.write_text(
+                endpoint_async_template.render(
+                    tag=utils.pascal_case(tag),
+                    collection=collection,
+                    description=tag_map.setdefault(snake_case(tag), ""),
+                ),
+                encoding=self.file_encoding,
+            )
 
-            imports.append(f'from .{snake_case(tag)} import {utils.pascal_case(tag)}Api')
-            api_classes.append(f'{utils.pascal_case(tag)}Api')
+            imports.append(f"from .{snake_case(tag)} import {utils.pascal_case(tag)}Api")
+            api_classes.append(f"{utils.pascal_case(tag)}Api")
 
         init_template = self.env.get_template("mattermost/endpoint_init.py.jinja")
         endpoint_init = endpoint_sync_dir / "__init__.py"
-        endpoint_init.write_text(init_template.render(imports=imports,api_classes=api_classes), encoding=self.file_encoding)
+        endpoint_init.write_text(
+            init_template.render(imports=imports, api_classes=api_classes), encoding=self.file_encoding
+        )
         endpoint_init = endpoint_async_dir / "__init__.py"
-        endpoint_init.write_text(init_template.render(imports=imports,api_classes=api_classes), encoding=self.file_encoding)
+        endpoint_init.write_text(
+            init_template.render(imports=imports, api_classes=api_classes), encoding=self.file_encoding
+        )
 
         driver_dir = self.package_dir / "driver"
         driver_dir.mkdir()
 
         client_path = driver_dir / "client.py"
         client_template = self.env.get_template("mattermost/client_base.py.jinja")
-        http_methods = ['get', 'options', 'head', 'post', 'put', 'patch', 'delete']
+        http_methods = ["get", "options", "head", "post", "put", "patch", "delete"]
         client_path.write_text(client_template.render(methods=http_methods), encoding=self.file_encoding)
 
         driver_base_path = driver_dir / "base.py"
@@ -422,16 +455,14 @@ class Project:
         driver_sync_template = self.env.get_template("mattermost/driver_async.py.jinja")
         driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
 
-        with oidmapping_file.open('w') as mapfile:
-            mapfile.write(json.dumps(oidmapping,indent=4))
-
-
+        with oidmapping_file.open("w") as mapfile:
+            mapfile.write(json.dumps(oidmapping, indent=4))
 
     def _build_doc(self) -> None:
         # Generate parts of the doc
 
         doc_dir = self.project_dir / "docs" / "source"
-#        doc_dir.mkdir()
+        #        doc_dir.mkdir()
 
         endpoint_dir = doc_dir / "endpoints"
         endpoint_template = self.env.get_template("mattermost/doc/endpoint.rst.jinja")
@@ -441,25 +472,31 @@ class Project:
             tags.append(tag)
 
             endpoint_sync_path = endpoint_dir / f"sync_{snake_case(tag)}.rst"
-            endpoint_sync_path.write_text(endpoint_template.render(tag=utils.pascal_case(tag),path='matterapi.endpoints.sync_api'), encoding=self.file_encoding)
+            endpoint_sync_path.write_text(
+                endpoint_template.render(tag=utils.pascal_case(tag), path="matterapi.endpoints.sync_api"),
+                encoding=self.file_encoding,
+            )
 
             endpoint_async_path = endpoint_dir / f"async_{snake_case(tag)}.rst"
-            endpoint_async_path.write_text(endpoint_template.render(tag=utils.pascal_case(tag),path='matterapi.endpoints.async_api'), encoding=self.file_encoding)
+            endpoint_async_path.write_text(
+                endpoint_template.render(tag=utils.pascal_case(tag), path="matterapi.endpoints.async_api"),
+                encoding=self.file_encoding,
+            )
 
-        
         endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_index.rst.jinja")
         endpoint_index_path = endpoint_dir / f"async_index.rst"
-        endpoint_index_path.write_text(endpoint_index_template.render(tags=tags, prefix='async'), encoding=self.file_encoding)
+        endpoint_index_path.write_text(
+            endpoint_index_template.render(tags=tags, prefix="async"), encoding=self.file_encoding
+        )
         endpoint_index_path = endpoint_dir / f"sync_index.rst"
-        endpoint_index_path.write_text(endpoint_index_template.render(tags=tags, prefix='sync'), encoding=self.file_encoding)
+        endpoint_index_path.write_text(
+            endpoint_index_template.render(tags=tags, prefix="sync"), encoding=self.file_encoding
+        )
 
-#        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_toc.rst.jinja")
-#        endpoint_index_path = endpoint_dir / f"index.rst"
-#        endpoint_index_path.write_text(endpoint_index_template.render(), encoding=self.file_encoding)
+    #        endpoint_index_template = self.env.get_template("mattermost/doc/endpoint_toc.rst.jinja")
+    #        endpoint_index_path = endpoint_dir / f"index.rst"
+    #        endpoint_index_path.write_text(endpoint_index_template.render(), encoding=self.file_encoding)
 
-
-
-            
     def _build_api_modules(self) -> None:
         # Generate Client
         client_path = self.package_dir / "client.py"
@@ -472,10 +509,9 @@ class Project:
         api_init = api_dir / "__init__.py"
         api_init.write_text('""" Contains methods for accessing the API """', encoding=self.file_encoding)
 
-
         endpoint_template = self.env.get_template("endpoint_module.py.jinja")
         for tag, collection in self.openapi.endpoint_collections_by_tag.items():
-            
+
             tag_dir = api_dir / tag
             tag_dir.mkdir()
             (tag_dir / "__init__.py").touch()
@@ -485,11 +521,11 @@ class Project:
                 module_path.write_text(endpoint_template.render(endpoint=endpoint), encoding=self.file_encoding)
 
 
-
 def _get_project_for_url_or_path(
     url: Optional[str],
     path: Optional[Path],
     meta: MetaType,
+    config: Config,
     custom_template_path: Optional[Path] = None,
     file_encoding: str = "utf-8",
 ) -> Union[Project, GeneratorError]:
@@ -499,7 +535,13 @@ def _get_project_for_url_or_path(
     openapi = GeneratorData.from_dict(data_dict)
     if isinstance(openapi, GeneratorError):
         return openapi
-    return Project(openapi=openapi, custom_template_path=custom_template_path, meta=meta, file_encoding=file_encoding)
+    return Project(
+        openapi=openapi,
+        custom_template_path=custom_template_path,
+        meta=meta,
+        config=config,
+        file_encoding=file_encoding,
+    )
 
 
 def create_new_client(
@@ -507,6 +549,7 @@ def create_new_client(
     url: Optional[str],
     path: Optional[Path],
     meta: MetaType,
+    config: Config,
     custom_template_path: Optional[Path] = None,
     file_encoding: str = "utf-8",
 ) -> Sequence[GeneratorError]:
@@ -517,7 +560,12 @@ def create_new_client(
          A list containing any errors encountered when generating.
     """
     project = _get_project_for_url_or_path(
-        url=url, path=path, custom_template_path=custom_template_path, meta=meta, file_encoding=file_encoding
+        url=url,
+        path=path,
+        custom_template_path=custom_template_path,
+        meta=meta,
+        file_encoding=file_encoding,
+        config=config,
     )
     if isinstance(project, GeneratorError):
         return [project]
@@ -529,6 +577,7 @@ def update_existing_client(
     url: Optional[str],
     path: Optional[Path],
     meta: MetaType,
+    config: Config,
     custom_template_path: Optional[Path] = None,
     file_encoding: str = "utf-8",
 ) -> Sequence[GeneratorError]:
@@ -539,7 +588,12 @@ def update_existing_client(
          A list containing any errors encountered when generating.
     """
     project = _get_project_for_url_or_path(
-        url=url, path=path, custom_template_path=custom_template_path, meta=meta, file_encoding=file_encoding
+        url=url,
+        path=path,
+        custom_template_path=custom_template_path,
+        meta=meta,
+        file_encoding=file_encoding,
+        config=config,
     )
     if isinstance(project, GeneratorError):
         return [project]

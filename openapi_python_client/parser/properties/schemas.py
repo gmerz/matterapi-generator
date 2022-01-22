@@ -16,7 +16,7 @@ else:
 
 @attr.s(auto_attribs=True, frozen=True)
 class Schemas:
-    """ Structure for containing all defined, shareable, and resuabled schemas (attr classes and Enums) """
+    """Structure for containing all defined, shareable, and resuabled schemas (attr classes and Enums)"""
 
     enums: Dict[str, EnumProperty] = attr.ib(factory=dict)
     models: Dict[str, ModelProperty] = attr.ib(factory=dict)

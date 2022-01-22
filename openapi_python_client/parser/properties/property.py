@@ -27,9 +27,8 @@ class Property:
     _json_type_string: ClassVar[str] = ""  # Type of the property after JSON serialization
     default: Optional[str] = attr.ib()
     python_name: str = attr.ib(init=False)
-    description: Optional[str] = attr.ib(default=None,kw_only=True)
+    description: Optional[str] = attr.ib(default=None, kw_only=True)
     example: Optional[str] = attr.ib()
-
 
     template: ClassVar[Optional[str]] = None
     json_is_dict: ClassVar[bool] = False
@@ -52,20 +51,20 @@ class Property:
             json: True if the type refers to the property after JSON serialization
         """
         type_string = self._type_string
-        
+
         if json:
             type_string = self.get_base_json_type_string()
         else:
             type_string = self.get_base_type_string()
 
         if no_optional or (self.required and not self.nullable):
-#        if no_optional:
+            #        if no_optional:
             return self._type_string
         if self.nullable:
-            #type_string = f"Union[{type_string},None]"
+            # type_string = f"Union[{type_string},None]"
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            #type_string = f"Union[Unset, {type_string}]"
+            # type_string = f"Union[Unset, {type_string}]"
             type_string = f"Optional[{type_string}]"
         return type_string
 
@@ -87,11 +86,11 @@ class Property:
             imports.add("from typing import Optional")
         if not self.required:
             imports.add("from typing import Optional")
-#            imports.add(f"from {prefix}types import UNSET, Unset")
+        #            imports.add(f"from {prefix}types import UNSET, Unset")
         return imports
 
     def to_string(self) -> str:
-        """ How this should be declared in a dataclass """
+        """How this should be declared in a dataclass"""
         default: Optional[str]
         if self.default is not None:
             default = self.default

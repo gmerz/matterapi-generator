@@ -8,16 +8,16 @@ from pydantic import BaseModel
 
 
 class ErrorLevel(Enum):
-    """ The level of an error """
+    """The level of an error"""
 
-    INFO = "INFO"  
+    INFO = "INFO"
     WARNING = "WARNING"  # Client is still generated but missing some pieces
     ERROR = "ERROR"  # Client could not be generated
 
 
 @dataclass
 class GeneratorError:
-    """ Base data struct containing info on an error that occurred """
+    """Base data struct containing info on an error that occurred"""
 
     detail: Optional[str] = None
     level: ErrorLevel = ErrorLevel.ERROR
@@ -26,7 +26,7 @@ class GeneratorError:
 
 @dataclass
 class OperationIdError:
-    """ Base data struct containing info on an error that occurred """
+    """Base data struct containing info on an error that occurred"""
 
     detail: Optional[str] = None
     level: ErrorLevel = ErrorLevel.INFO
@@ -35,7 +35,7 @@ class OperationIdError:
 
 @dataclass
 class ParseError(GeneratorError):
-    """ An error raised when there's a problem parsing an OpenAPI document """
+    """An error raised when there's a problem parsing an OpenAPI document"""
 
     level: ErrorLevel = ErrorLevel.WARNING
     data: Optional[BaseModel] = None
@@ -44,7 +44,7 @@ class ParseError(GeneratorError):
 
 @dataclass
 class PropertyError(ParseError):
-    """ Error raised when there's a problem creating a Property """
+    """Error raised when there's a problem creating a Property"""
 
     header = "Problem creating a Property: "
 

@@ -1,8 +1,8 @@
+import re
 from itertools import chain
 from typing import Any, ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
 import attr
-import re
 
 from ... import schema as oai
 from ... import utils
@@ -17,7 +17,7 @@ from .schemas import Schemas
 
 @attr.s(auto_attribs=True, frozen=True)
 class NoneProperty(Property):
-    """ A property that is always None (used for empty schemas) """
+    """A property that is always None (used for empty schemas)"""
 
     _type_string: ClassVar[str] = "None"
     _json_type_string: ClassVar[str] = "None"
@@ -26,7 +26,7 @@ class NoneProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class StringProperty(Property):
-    """ A property of type str """
+    """A property of type str"""
 
     max_length: Optional[int] = None
     pattern: Optional[str] = None
@@ -59,7 +59,7 @@ class DateTimeProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class DateProperty(Property):
-    """ A property of type datetime.date """
+    """A property of type datetime.date"""
 
     _type_string: ClassVar[str] = "datetime.date"
     _json_type_string: ClassVar[str] = "str"
@@ -80,7 +80,7 @@ class DateProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class FileProperty(Property):
-    """ A property used for uploading files """
+    """A property used for uploading files"""
 
     _type_string: ClassVar[str] = "File"
     # Return type of File.to_tuple()
@@ -102,7 +102,7 @@ class FileProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class FloatProperty(Property):
-    """ A property of type float """
+    """A property of type float"""
 
     _type_string: ClassVar[str] = "float"
     _json_type_string: ClassVar[str] = "float"
@@ -110,7 +110,7 @@ class FloatProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class IntProperty(Property):
-    """ A property of type int """
+    """A property of type int"""
 
     _type_string: ClassVar[str] = "int"
     _json_type_string: ClassVar[str] = "int"
@@ -118,7 +118,7 @@ class IntProperty(Property):
 
 @attr.s(auto_attribs=True, frozen=True)
 class BooleanProperty(Property):
-    """ Property for bool """
+    """Property for bool"""
 
     _type_string: ClassVar[str] = "bool"
     _json_type_string: ClassVar[str] = "bool"
@@ -129,20 +129,20 @@ InnerProp = TypeVar("InnerProp", bound=Property)
 
 @attr.s(auto_attribs=True, frozen=True)
 class ListProperty(Property, Generic[InnerProp]):
-    """ A property representing a list (array) of other properties """
+    """A property representing a list (array) of other properties"""
 
     inner_property: InnerProp
     template: ClassVar[str] = "list_property.py.jinja"
 
     def get_type_string(self, no_optional: bool = False) -> str:
-        """ Get a string representation of type that should be used when declaring this property """
+        """Get a string representation of type that should be used when declaring this property"""
         type_string = f"List[{self.inner_property.get_type_string()}]"
         if no_optional:
             return type_string
         if self.nullable:
             type_string = f"Optional[{type_string}]"
         if not self.required:
-            #type_string = f"Union[Unset, {type_string}]"
+            # type_string = f"Union[Unset, {type_string}]"
             type_string = f"Optional[{type_string}]"
         return type_string
 
@@ -172,7 +172,7 @@ class ListProperty(Property, Generic[InnerProp]):
 
 @attr.s(auto_attribs=True, frozen=True)
 class UnionProperty(Property):
-    """ A property representing a Union (anyOf) of other properties """
+    """A property representing a Union (anyOf) of other properties"""
 
     inner_properties: List[Property]
     template: ClassVar[str] = "union_property.py.jinja"
@@ -204,7 +204,7 @@ class UnionProperty(Property):
         if no_optional:
             return type_strings
         if not self.required:
-            #type_string = f"Union[Unset, {inner_prop_string}]"
+            # type_string = f"Union[Unset, {inner_prop_string}]"
             type_strings = f"Optional[{inner_prop_string}]"
             return type_strings
         if self.nullable:
@@ -243,7 +243,7 @@ class UnionProperty(Property):
 def _string_based_property(
     name: str, required: bool, data: oai.Schema
 ) -> Union[StringProperty, DateProperty, DateTimeProperty, FileProperty]:
-    """ Construct a Property from the type "string" """
+    """Construct a Property from the type "string" """
     string_format = data.schema_format
     if string_format == "date-time":
         return DateTimeProperty(
@@ -253,7 +253,7 @@ def _string_based_property(
             nullable=data.nullable,
             description=data.description,
             example=data.example,
-            )
+        )
     elif string_format == "date":
         return DateProperty(
             name=name,
@@ -434,7 +434,7 @@ def _property_from_data(
     parent_name: str,
     child_property: bool = False,
 ) -> Tuple[Union[Property, PropertyError], Schemas]:
-    """ Generate a Property from the OpenAPI dictionary representation of it """
+    """Generate a Property from the OpenAPI dictionary representation of it"""
     name = utils.remove_string_escapes(name)
     if isinstance(data, oai.Reference):
         return _property_from_ref(name=name, required=required, nullable=False, data=data, schemas=schemas)
@@ -452,7 +452,10 @@ def _property_from_data(
     if data.anyOf or data.oneOf:
         return build_union_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
     if not data.type:
-        return NoneProperty(name=name, required=required, nullable=False, default=None, description=data.description), schemas
+        return (
+            NoneProperty(name=name, required=required, nullable=False, default=None, description=data.description),
+            schemas,
+        )
 
     if data.type == "string":
         return _string_based_property(name=name, required=required, data=data), schemas
@@ -495,11 +498,17 @@ def _property_from_data(
     elif data.type == "array":
         return build_list_property(data=data, name=name, required=required, schemas=schemas, parent_name=parent_name)
     elif data.type == "object" or data.allOf:
-        return build_model_property(data=data, name=name, schemas=schemas, required=required, parent_name=parent_name, child_property=child_property)
-#    elif not data.type:
-#        return NoneProperty(name=name, required=required, nullable=False, default=None), schemas
+        return build_model_property(
+            data=data,
+            name=name,
+            schemas=schemas,
+            required=required,
+            parent_name=parent_name,
+            child_property=child_property,
+        )
+    #    elif not data.type:
+    #        return NoneProperty(name=name, required=required, nullable=False, default=None), schemas
     return PropertyError(data=data, detail=f"unknown type {data.type}"), schemas
-
 
 
 def property_from_data(
@@ -511,10 +520,17 @@ def property_from_data(
     parent_name: str,
     child_property: bool = False,
 ) -> Tuple[Union[Property, PropertyError], Schemas]:
-    if 'description' in data.__dict__:
+    if "description" in data.__dict__:
         data.description = utils.clean_description(data.description)
     try:
-        return _property_from_data(name=name, required=required, data=data, schemas=schemas, parent_name=parent_name, child_property=child_property)
+        return _property_from_data(
+            name=name,
+            required=required,
+            data=data,
+            schemas=schemas,
+            parent_name=parent_name,
+            child_property=child_property,
+        )
     except ValidationError:
         return PropertyError(detail="Failed to validate default value", data=data), schemas
 
@@ -534,7 +550,7 @@ def update_schemas_with_data(name: str, data: oai.Schema, schemas: Schemas) -> U
 
 
 def build_schemas(*, components: Dict[str, Union[oai.Reference, oai.Schema]]) -> Schemas:
-    """ Get a list of Schemas from an OpenAPI dict """
+    """Get a list of Schemas from an OpenAPI dict"""
     schemas = Schemas()
     to_process: Iterable[Tuple[str, Union[oai.Reference, oai.Schema]]] = components.items()
     processing = True

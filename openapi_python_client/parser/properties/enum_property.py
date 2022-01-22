@@ -13,7 +13,7 @@ ValueType = Union[str, int]
 
 @attr.s(auto_attribs=True, frozen=True)
 class EnumProperty(Property):
-    """ A property that should use an enum """
+    """A property that should use an enum"""
 
     values: Dict[str, ValueType]
     reference: Reference
@@ -32,7 +32,7 @@ class EnumProperty(Property):
             type_string = f"Optional[{type_string}]"
         if not self.required:
             type_string = f"Optional[{type_string}]"
-            #type_string = f"Union[Unset, {type_string}]"
+            # type_string = f"Union[Unset, {type_string}]"
         return type_string
 
     def get_base_json_type_string(self, json: bool = False) -> str:
@@ -47,13 +47,13 @@ class EnumProperty(Property):
             back to the root of the generated client.
         """
         imports = super().get_imports(prefix=prefix)
-        #imports.add(f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}")
+        # imports.add(f"from {prefix}models.{self.reference.module_name} import {self.reference.class_name}")
         imports.add(f"from {prefix}enums import {self.reference.class_name}")
         return imports
 
     @staticmethod
     def values_from_list(values: List[ValueType]) -> Dict[str, ValueType]:
-        """ Convert a list of values into dict of {name: value} """
+        """Convert a list of values into dict of {name: value}"""
         output: Dict[str, ValueType] = {}
 
         for i, value in enumerate(values):
