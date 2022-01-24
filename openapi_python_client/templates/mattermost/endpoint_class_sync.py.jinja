@@ -21,7 +21,7 @@ class {{tag}}Api(ApiBaseClass):
     def {{endpoint.name | snakecase}}(self,
     {{ arguments(endpoint) | indent(8) }}
     ) -> {{ return_string | indent(8)}}:
-        """ {{ endpoint.summary  | wordwrap(72) | indent(8) if endpoint.summary}}
+        """{{ endpoint.summary| wordwrap(72) | indent(8) if endpoint.summary}}
 
         {{ endpoint.description | wordwrap(72) | indent(8) if endpoint.description}} 
         """
@@ -61,7 +61,7 @@ class {{tag}}Api(ApiBaseClass):
             {% endif %}
             {% if endpoint.multipart_body_reference %}
             "data": multipart_body_data.get_data(),
-            {% if file_properties %}
+            {% if endpoint.multipart_body_reference.file_property_names %}
             "files": multipart_body_data.get_files(),
             {% endif %}
             {% endif %}

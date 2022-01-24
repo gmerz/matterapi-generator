@@ -8,6 +8,7 @@ from ... import utils
 from ..errors import PropertyError
 from ..reference import Reference
 from .property import Property
+from .file_property import FileProperty
 from .schemas import Schemas
 
 
@@ -18,6 +19,7 @@ class ModelProperty(Property):
     reference: Reference
     required_properties: List[Property]
     optional_properties: List[Property]
+    file_property_names: Set[str]
     description: str
     relative_imports: Set[str]
     additional_properties: Union[bool, Property] = False
@@ -223,6 +225,15 @@ def build_model_property(
             data=data, name=name, required=required, schemas=schemas, parent_name=parent_name
         )
 
+    file_properties = []
+    for prop in property_data.required_props:
+        if isinstance(prop, FileProperty):
+            file_properties.append(prop.python_name)
+    for prop in property_data.optional_props:
+        if isinstance(prop, FileProperty):
+            file_properties.append(prop.python_name)
+
+
     prop = ModelProperty(
         reference=ref,
         required_properties=property_data.required_props,
@@ -239,6 +250,7 @@ def build_model_property(
         example=data.example,
         model_type=data.type if data.type else "object",
         array_items_property=array_prop,
+        file_property_names=set(file_properties)
     )
 
     if child_property:

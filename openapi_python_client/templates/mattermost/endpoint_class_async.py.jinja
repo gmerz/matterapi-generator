@@ -60,7 +60,7 @@ class {{tag}}Api(ApiBaseClass):
             {% endif %}
             {% if endpoint.multipart_body_reference %}
             "data": multipart_body_data.get_data(),
-            {% if file_properties %}
+            {% if endpoint.multipart_body_reference.file_property_names %}
             "files": multipart_body_data.get_files(),
             {% endif %}
             {% endif %}
