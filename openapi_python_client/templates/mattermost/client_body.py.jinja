@@ -35,28 +35,28 @@ class {{ client_type }}Client(BaseClient):
 
     {{keyword_async}}def _create_httpx_client(self):
         """Create a httpx.{{ keyword_type_async }}Client instance to be used for requests and perform authentication if needed"""
-        client_options = (
-            self.options.client_options
-            if self.options.client_options
+        httpx_client_options = (
+            self.options.httpx_client_options
+            if self.options.httpx_client_options
             else HttpxClientOptions()
         )
         base_url = str(httpx.URL(self.options.url).join(self.options.basepath))
-        client = httpx.{{  keyword_type_async }}Client(base_url=base_url, **dict(client_options))
-        client.event_hooks["response"] = [self.raise_on_4xx_5xx] + client.event_hooks[
+        httpx_client = httpx.{{  keyword_type_async }}Client(base_url=base_url, **dict(httpx_client_options))
+        httpx_client.event_hooks["response"] = [self.raise_on_4xx_5xx] + httpx_client.event_hooks[
             "response"
         ]
         if isinstance(self.options.auth, AuthToken):
-            client.auth = self.options.auth
+            httpx_client.auth = self.options.auth
             self.active_token = self.options.auth.token
         if isinstance(self.options.auth, AuthLogin):
             """Login with username and password and get a session_token"""
-            response = {{keyword_await}}client.post(
+            response = {{keyword_await}}httpx_client.post(
                 url="/users/login", json=self.options.auth.dict(exclude_unset=True)
             )
             session_token = response.headers.get("token", None)
-            client.auth = AuthToken(token=session_token)
+            httpx_client.auth = AuthToken(token=session_token)
             self.active_token = session_token
-        return client
+        return httpx_client
 
     {{keyword_async }}def raise_on_4xx_5xx(self, response):
         try:
@@ -93,7 +93,7 @@ class {{ client_type }}Client(BaseClient):
             raise
 
     {{keyword_async }}def _login(self):
-        """Calling this creates a client and sets .active_token, needed for websockets"""
+        """Calling this creates a httpx client and sets .active_token, needed for websockets"""
         {{keyword_await }}self._create_httpx_client()
 
     @{{keyword_type_async | lower}}contextmanager

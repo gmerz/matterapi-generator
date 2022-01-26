@@ -71,7 +71,7 @@ class ApiClientOptions(BaseModel):
     Provide login information for tasks which require authentication.
     If set, this can be an instance of :class:`.AuthLogin` or :class:`.AuthToken`
     """
-    client_options: Optional[HttpxClientOptions]
+    httpx_client_options: Optional[HttpxClientOptions]
     """ Options to be passed to the underlying http client doing the actual requests """
     debug: bool = False
     """ Set to ``true`` to enable debugging """
