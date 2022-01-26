@@ -431,29 +431,29 @@ class Project:
             init_template.render(imports=imports, api_classes=api_classes), encoding=self.file_encoding
         )
 
-        driver_dir = self.package_dir / "driver"
-        driver_dir.mkdir()
+        client_dir = self.package_dir / "client"
+        client_dir.mkdir()
 
-        #client_path = driver_dir / "client.py"
+        #client_path = client_dir / "client.py"
         #client_template = self.env.get_template("mattermost/client_base.py.jinja")
         #http_methods = ["get", "options", "head", "post", "put", "patch", "delete"]
         #client_path.write_text(client_template.render(methods=http_methods), encoding=self.file_encoding)
 
-        driver_base_path = driver_dir / "base.py"
-        driver_base_template = self.env.get_template("mattermost/driver_base.py.jinja")
-        driver_base_path.write_text(driver_base_template.render(), encoding=self.file_encoding)
+        client_base_path = client_dir / "base.py"
+        client_base_template = self.env.get_template("mattermost/client_base.py.jinja")
+        client_base_path.write_text(client_base_template.render(), encoding=self.file_encoding)
 
-        driver_exceptions_path = driver_dir / "exceptions.py"
-        driver_exceptions_template = self.env.get_template("mattermost/exceptions.py.jinja")
-        driver_exceptions_path.write_text(driver_exceptions_template.render(), encoding=self.file_encoding)
+        client_exceptions_path = client_dir / "exceptions.py"
+        client_exceptions_template = self.env.get_template("mattermost/exceptions.py.jinja")
+        client_exceptions_path.write_text(client_exceptions_template.render(), encoding=self.file_encoding)
 
-        driver_sync_path = driver_dir / "sync_driver.py"
-        driver_sync_template = self.env.get_template("mattermost/driver_sync.py.jinja")
-        driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
+        client_sync_path = client_dir / "sync_client.py"
+        client_sync_template = self.env.get_template("mattermost/client_body.py.jinja")
+        client_sync_path.write_text(client_sync_template.render(tags=tags,async_class=False), encoding=self.file_encoding)
 
-        driver_sync_path = driver_dir / "async_driver.py"
-        driver_sync_template = self.env.get_template("mattermost/driver_async.py.jinja")
-        driver_sync_path.write_text(driver_sync_template.render(tags=tags), encoding=self.file_encoding)
+        client_async_path = client_dir / "async_client.py"
+        client_async_template = self.env.get_template("mattermost/client_body.py.jinja")
+        client_async_path.write_text(client_async_template.render(tags=tags,async_class=True), encoding=self.file_encoding)
 
         with oidmapping_file.open("w") as mapfile:
             mapfile.write(json.dumps(oidmapping, indent=4))

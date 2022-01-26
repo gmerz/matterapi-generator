@@ -1,4 +1,7 @@
-class ApiBaseClass:
-    def __init__(self, driver, skip_response_parsing : bool = False):
-        self.driver = driver
-        self.skip_response_parsing = skip_response_parsing
+from ..client.base import BaseClient
+from pydantic import BaseModel
+
+class ApiBaseClass(BaseModel):
+    client: BaseClient
+    skip_response_parsing: bool = False
+

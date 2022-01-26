@@ -76,8 +76,8 @@ class {{tag}}Api(ApiBaseClass):
             {% endif %}
         }
 
-        with self.driver._get_client() as http_client:
-            response = http_client.{{ endpoint.method }}(
+        with self.client._get_httpx_client() as httpx_client:
+            response = httpx_client.{{ endpoint.method }}(
                 **request_kwargs,
             )
 

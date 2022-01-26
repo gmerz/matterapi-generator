@@ -75,8 +75,8 @@ class {{tag}}Api(ApiBaseClass):
             {% endif %}
         }
 
-        async with self.driver._get_client() as http_client:
-            response = await http_client.{{ endpoint.method }}(
+        async with self.client._get_httpx_client() as httpx_client:
+            response = await httpx_client.{{ endpoint.method }}(
                 **request_kwargs,
             )
 
