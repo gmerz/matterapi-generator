@@ -1,45 +1,110 @@
-from typing import Optional, Union
-
+from typing import Optional
 import httpx
-
-from .base import BaseDriver,AuthToken, AuthLogin
-from .client import SyncClient, SyncAuthenticatedClient
-from .exceptions import ApiError
-from ..models import User
-
+from contextlib import contextmanager
 from pydantic import PrivateAttr
+from .base import AuthLogin, AuthToken, BaseDriver, ClientOptions
+from .exceptions import (
+    ContentTooLarge,
+    FeatureDisabled,
+    InternalServerError,
+    InvalidOrMissingParameters,
+    MethodNotAllowed,
+    NoAccessTokenProvided,
+    NotEnoughPermissions,
+    ResourceNotFound,
+    TooManyRequests,
+)
 
 {% for tag in tags: %}
 from ..endpoints.sync_api.{{tag | snakecase}} import {{tag | pascalcase}}Api
 {% endfor %}
 
 class SyncDriver(BaseDriver):
-    """ Synchronous mattermost api driver implementation """
- 
-    _client : Optional[Union[SyncClient,SyncAuthenticatedClient]] = PrivateAttr(None)
-    """ The underlying client which handles requests to the api """
+    """Synchronous mattermost api client implementation"""
 
-    def login(self):
-        """
-        Login with the provided authentication information. 
-        """
-        url = str(httpx.URL(self.options.url).join(self.options.basepath))
-        self._client = self._client or SyncClient(base_url=url, client_options=self.options.client_options)
-        
+    _client: Optional[httpx.Client] = PrivateAttr(None)
+    """ The underlying httpx client which handles requests to the api in case we are inside a session """
+
+    def _create_client(self):
+        """Create a httpx.Client instance to be used for requests and perform authentication if needed"""
+        client_options = (
+            self.options.client_options
+            if self.options.client_options
+            else ClientOptions()
+        )
+        base_url = str(httpx.URL(self.options.url).join(self.options.basepath))
+        client = httpx.Client(base_url=base_url, **dict(client_options))
+        client.event_hooks["response"] = [self.raise_on_4xx_5xx] + client.event_hooks[
+            "response"
+        ]
         if isinstance(self.options.auth, AuthToken):
+            client.auth = self.options.auth
             self.active_token = self.options.auth.token
-            self._client = SyncAuthenticatedClient(base_url=url, auth_token=self.options.auth.token, client_options=self.options.client_options)
-            user_api = UsersApi(self._client)
-            self.user = user_api.get_user("me")
-        elif isinstance(self.options.auth, AuthLogin):
-            user_api = UsersApi(self._client)
-            response = user_api.login(json_body=self.options.auth)
-            self.user = User.parse_obj(response.json())
-            session_token = response.headers['token']
+        if isinstance(self.options.auth, AuthLogin):
+            """Login with username and password and get a session_token"""
+            response = client.post(
+                url="/users/login", json=self.options.auth.dict(exclude_unset=True)
+            )
+            session_token = response.headers.get("token", None)
+            client.auth = AuthToken(token=session_token)
             self.active_token = session_token
-            self._client = SyncAuthenticatedClient(base_url=url, auth_token = session_token, client_options=self.options.client_options)
+        return client
+
+    def raise_on_4xx_5xx(self, response):
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            try:
+                e.response.read()
+                data = e.response.json()
+                message = data.get("message", data)
+            except ValueError:
+                message = response.text
+            if e.response.status_code == 400:
+                raise InvalidOrMissingParameters(message) from e
+            if e.response.status_code == 401:
+                raise NoAccessTokenProvided(message) from e
+            if e.response.status_code == 403:
+                raise NotEnoughPermissions(message) from e
+            if e.response.status_code == 404:
+                raise ResourceNotFound(message) from e
+            if e.response.status_code == 405:
+                raise MethodNotAllowed(message) from e
+            if e.response.status_code == 413:
+                raise ContentTooLarge(message) from e
+            if e.response.status_code == 429:
+                raise TooManyRequests(message) from e
+            if e.response.status_code == 500:
+                raise InternalServerError(message) from e
+            if e.response.status_code == 501:
+                raise FeatureDisabled(message) from e
+            raise
+
+    def _login(self):
+        """Calling this creates a client and sets .active_token, needed for websockets"""
+        self._create_client()
+
+    @contextmanager
+    def _get_client(self):
+        """Get the currently set httpx.Client instance or create a new one"""
+        if not self._client or self._client.is_closed:
+            client = self._create_client()
+            try:
+                yield client
+            finally:
+                client.close()
         else:
-            raise ApiError("No valid authentication credentials provided")
+            yield self._client
+
+    @contextmanager
+    def session(self):
+        """Open a Session which re-uses the underlying httpx client and it's connections"""
+        driver = self.copy()
+        driver._client = driver._create_client()
+        try:
+            yield driver
+        finally:
+            driver._client.close()
 
 
     {% for tag in tags: %}
@@ -49,6 +114,6 @@ class SyncDriver(BaseDriver):
 
         :type: :class:`~matterapi.endpoints.sync_api.{{tag | pascalcase}}Api`
         """
-        return {{tag | pascalcase}}Api(self._client, self.options.skip_response_parsing)
+        return {{tag | pascalcase}}Api(self, self.options.skip_response_parsing)
     {% endfor %}
 

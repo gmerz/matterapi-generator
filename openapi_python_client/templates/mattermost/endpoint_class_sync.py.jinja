@@ -26,18 +26,17 @@ class {{tag}}Api(ApiBaseClass):
         {{ endpoint.description | wordwrap(72) | indent(8) if endpoint.description}} 
         """
 
-        url = "{}{{ endpoint.path }}".format(
-            self.client.base_url
+        url = "{{ endpoint.path }}".format(
             {%- for parameter in endpoint.path_parameters -%}
-            ,{{parameter.name}}={{parameter.python_name}}
+            {{parameter.name}}={{parameter.python_name}},
             {%- endfor -%}
         )
-        headers: Dict[str, Any] = self.client.get_headers()
-        cookies: Dict[str, Any] = self.client.get_cookies()
         {% if endpoint.header_parameters %}
+        headers: Dict[str, Any] = {}
         {{header_params(endpoint) | indent(8)}}
         {% endif %}
         {% if endpoint.cookie_parameters %}
+        cookies: Dict[str, Any] = {}
         {{cookie_params(endpoint) | indent(8)}}
         {% endif %}
         {% if endpoint.query_parameters %}
@@ -53,8 +52,12 @@ class {{tag}}Api(ApiBaseClass):
 
         request_kwargs = {
             "url": url,
+            {% if endpoint.header_parameters %}
             "headers": headers,
+            {% endif %}
+            {% if endpoint.cookie_parameters %}
             "cookies": cookies,
+            {% endif %}
             {#- "timeout": self.client.get_timeout(), -#}
             {% if endpoint.form_body_reference %}
             "data": {{ endpoint.form_body_reference.python_name}},
@@ -73,9 +76,10 @@ class {{tag}}Api(ApiBaseClass):
             {% endif %}
         }
 
-        response = self.client.{{ endpoint.method }}(
-            **request_kwargs,
-        )
+        with self.driver._get_client() as http_client:
+            response = http_client.{{ endpoint.method }}(
+                **request_kwargs,
+            )
 
         if self.skip_response_parsing:
             return response

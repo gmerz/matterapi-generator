@@ -4,21 +4,35 @@ import inspect
 import json
 import logging
 import socket
-from typing import Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 from urllib.parse import urljoin, urlparse
 
+import httpx
 import websockets
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, validator
-
-from ..models import User
-from .client import ClientOptions
 
 logger = logging.getLogger("matterapi.driver")
 logger.setLevel(logging.INFO)
 
 
+class ClientOptions(BaseModel):
+    """Options for the httpx client"""
+
+    class Config:
+        extra = "allow"
+        arbitrary_types_allowed = True
+
+    timeout: Optional[Any] = 10.0
+    """ Timeout for operations """
+    verify: Union[bool, Any] = True
+    """ If and how TLS should be verified. """
+    cert: Optional[Any] = None
+    proxies: Optional[Dict] = None
+    auth: Optional[Any] = None
+
+
 class AuthLogin(BaseModel):
-    """ Mattermost Auhentication Credentials """
+    """Mattermost Auhentication Credentials"""
 
     login_id: str
     """ Login id for authentication """
@@ -28,14 +42,19 @@ class AuthLogin(BaseModel):
     """ MultiFactorAuthentication token """
 
 
-class AuthToken(BaseModel):
-    """ Mattermost Auhentication Token """
+class AuthToken(httpx.Auth, BaseModel):
+    """Mattermost Auhentication Token"""
 
     token: str
+    """ Bearer Authentication token"""
+
+    def auth_flow(self, request):
+        request.headers["Authorization"] = f"Bearer {self.token}"
+        yield request
 
 
 class DriverOptions(BaseModel):
-    """ Options to be passed to a driver """
+    """Options to be passed to a driver"""
 
     url: AnyHttpUrl
     """ Mattermost base url
@@ -49,7 +68,7 @@ class DriverOptions(BaseModel):
     auth: Optional[Union[AuthLogin, AuthToken]]
     """ Authentication information for the driver
 
-    Provide login information for task which require authentication.
+    Provide login information for tasks which require authentication.
     If set, this can be an instance of :class:`.AuthLogin` or :class:`.AuthToken`
     """
     client_options: Optional[ClientOptions]
@@ -73,7 +92,7 @@ class DriverOptions(BaseModel):
 
     @validator("ws_url", pre=True, always=True)
     def _ws_url_setter(cls, v, values):
-        """ Set the websocket url from the url if not set explicitly """
+        """Set the websocket url from the url if not set explicitly"""
         if v is None:
             if "url" in values:
                 url = urlparse(values["url"])
@@ -83,7 +102,9 @@ class DriverOptions(BaseModel):
         else:
             return v
 
-        raise ValueError("Url is not present in values and ws_url was not set explicitly")
+        raise ValueError(
+            "Url is not present in values and ws_url was not set explicitly"
+        )
 
 
 class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
@@ -93,8 +114,6 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
 
     options: DriverOptions
     """ Options to be passed to the driver """
-    user: Optional[User]
-    """ Object to hold information on the current user/bot. Will be set populated after calling login() """
     active_token: Optional[str]
     """ The currently active authentication token.
 
@@ -109,14 +128,14 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
         return v
 
     @abc.abstractmethod
-    async def login(self):
+    async def _login(self):
         pass
 
     async def _relogin(self):
-        if inspect.iscoroutinefunction(self.login):
-            await self.login()
+        if inspect.iscoroutinefunction(self._login):
+            await self._login()
         else:
-            await asyncio.to_thread(self.login)
+            await asyncio.to_thread(self._login)
 
     async def start_ws(self, event_handler: Callable, relogin=False):
         """Start the websocket connection and pass messages to event_handler
@@ -136,10 +155,16 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
         while True:
             try:
                 await self._start_ws(event_handler)
-            except (socket.gaierror, websockets.exceptions.ConnectionClosedError, ConnectionRefusedError) as e:
+            except (
+                socket.gaierror,
+                websockets.exceptions.ConnectionClosedError,
+                ConnectionRefusedError,
+            ) as e:
                 logger.info(
-                    ("Connection to websocket closed. Either the server is not"
-                     "reachable or authentication failed. Reconnecting in %s seconds"),
+                    (
+                        "Connection to websocket closed. Either the server is not"
+                        "reachable or authentication failed. Reconnecting in %s seconds"
+                    ),
                     self.options.ws_reconnect_wait_time,
                     exc_info=True,
                 )
@@ -153,7 +178,7 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
                 await self._relogin()
 
     def start_ws_sync(self, event_handler: Callable, relogin=False):
-        """ Same as `.start_ws` but wraps the async call to be called synchronously """
+        """Same as `.start_ws` but wraps the async call to be called synchronously"""
         asyncio.run(self.start_ws(event_handler, relogin))
 
     async def _handle_messages(self, event_handler: Callable, message: Dict):
@@ -169,7 +194,11 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
 
     async def _start_ws(self, event_handler: Callable):
         json_auth_data = json.dumps(
-            {"seq": 1, "action": "authentication_challenge", "data": {"token": self.active_token}}
+            {
+                "seq": 1,
+                "action": "authentication_challenge",
+                "data": {"token": self.active_token},
+            }
         ).encode("utf8")
 
         logger.info("Connecting to websocket")
@@ -179,7 +208,9 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
             await websocket.send(json_auth_data)
             hello = json.loads(await websocket.recv())
             logger.debug("%s", hello)
-            logger.info("Connected to Mattermost server: %s", hello["data"]["server_version"])
+            logger.info(
+                "Connected to Mattermost server: %s", hello["data"]["server_version"]
+            )
             # Wait for authentication 'OK'
             async for raw_message in websocket:
                 message = json.loads(raw_message)
@@ -188,7 +219,9 @@ class BaseDriver(BaseModel, metaclass=abc.ABCMeta):
                     if message["status"] == "OK":
                         logger.info("Successfully authenticated to websocket")
                         break
-                logger.info("Got a stray message during authentication procedure: %s", message)
+                logger.info(
+                    "Got a stray message during authentication procedure: %s", message
+                )
             tasks = set()
             while True:
                 try:

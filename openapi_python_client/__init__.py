@@ -434,10 +434,10 @@ class Project:
         driver_dir = self.package_dir / "driver"
         driver_dir.mkdir()
 
-        client_path = driver_dir / "client.py"
-        client_template = self.env.get_template("mattermost/client_base.py.jinja")
-        http_methods = ["get", "options", "head", "post", "put", "patch", "delete"]
-        client_path.write_text(client_template.render(methods=http_methods), encoding=self.file_encoding)
+        #client_path = driver_dir / "client.py"
+        #client_template = self.env.get_template("mattermost/client_base.py.jinja")
+        #http_methods = ["get", "options", "head", "post", "put", "patch", "delete"]
+        #client_path.write_text(client_template.render(methods=http_methods), encoding=self.file_encoding)
 
         driver_base_path = driver_dir / "base.py"
         driver_base_template = self.env.get_template("mattermost/driver_base.py.jinja")
