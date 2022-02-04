@@ -1,9 +1,11 @@
+""" Enums used in different API endpoints """
 from enum import Enum
 from enum import IntEnum
 
 
 {% for enum in int_enums %}
 class {{ enum.reference.class_name }}(IntEnum):
+    """ {{enum.description}} """
     {% for key, value in enum.values.items() %}
     {{ key }} = {{ value }}
     {% endfor %}
@@ -15,6 +17,7 @@ class {{ enum.reference.class_name }}(IntEnum):
 
 {% for enum in str_enums %}
 class {{ enum.reference.class_name }}(str, Enum):
+    """ {{enum.description}} """
     {% for key, value in enum.values.items() %}
     {{ key }} = "{{ value }}"
     {% endfor %}

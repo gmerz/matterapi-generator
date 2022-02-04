@@ -1,3 +1,8 @@
+{% set keyword_async = 'async ' if async_class == True else '' %}
+{% set keyword_await = 'await ' if async_class == True else '' %}
+""" Module to access the {{tag}} endpoints """
+# pylint: disable=too-many-lines,too-many-locals,too-many-public-methods
+
 from typing import Any, Dict, List, Optional, Union, cast
 from ..base import ApiBaseClass
 from pydantic import BaseModel
@@ -11,25 +16,28 @@ from pydantic import BaseModel
 {% from "endpoint_macros.py.jinja" import header_params, cookie_params, query_params, json_body, return_type, arguments, client, kwargs, parse_response %}
 
 class {{tag}}Api(ApiBaseClass):
-    """ {{description | wordwrap(72) if description }} """
+    """ {{description | wordwrap(72) if description}} """
 {% for endpoint in collection.endpoints %}
 {% set return_string = return_type(endpoint) %}
 {% set parsed_responses = (endpoint.responses | length > 0) and return_string != "None" %}
 
 
-    async def {{endpoint.name | snakecase}}(self,
+    {{keyword_async}}def {{endpoint.name | snakecase}}(self,
     {{ arguments(endpoint) | indent(8) }}
     ) -> {{ return_string | indent(8)}}:
-        """{{ endpoint.summary | wordwrap(72) | indent(8) if endpoint.summary}} 
+        """{{ endpoint.summary| wordwrap(72) | indent(8) if endpoint.summary}}
 
         {{ endpoint.description | wordwrap(72) | indent(8) if endpoint.description}} 
+        
+        Api Reference:
+            `{{ endpoint.name | pascalcase }} <https://api.mattermost.com/#operation/{{ endpoint.name | pascalcase }}>`_
         """
 
-        url = "{{ endpoint.path }}".format(
-            {%- for parameter in endpoint.path_parameters -%}
-            {{parameter.name}}={{parameter.python_name}},
-            {%- endfor -%}
-        )
+        {% if endpoint.path_parameters %}
+        url = f"{{ endpoint.path }}"
+        {% else %}
+        url = "{{ endpoint.path }}"
+        {% endif %}
         {% if endpoint.header_parameters %}
         headers: Dict[str, Any] = {}
         {{header_params(endpoint) | indent(8)}}
@@ -74,9 +82,9 @@ class {{tag}}Api(ApiBaseClass):
             "params": params,
             {% endif %}
         }
-
-        async with self.client._get_httpx_client() as httpx_client:
-            response = await httpx_client.{{ endpoint.method }}(
+        # pylint: disable-next=protected-access
+        {{keyword_async}}with self.client._get_httpx_client() as httpx_client:
+            response = {{keyword_await}}httpx_client.{{ endpoint.method }}(
                 **request_kwargs,
             )
 

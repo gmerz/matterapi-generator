@@ -1,6 +1,7 @@
 import builtins
 import re
 from keyword import iskeyword
+import textwrap
 
 import stringcase
 
@@ -92,14 +93,22 @@ def clean_description(description):
     if repl_perms or repl_version or regex_local or repl_note:
         description += "\n"
 
+    wrapper = textwrap.TextWrapper(width=64,
+            initial_indent="    ",
+            subsequent_indent="    ")
+
     if repl_perms:
-        description += f"\nPermissions:\n    {repl_perms[0]}"
+        repl_perms = '\n'.join(wrapper.wrap(repl_perms[0]))
+        description += f"\nPermissions:\n{repl_perms}"
     if repl_version:
-        description += f"\nMinimum Server Version:\n    {repl_version[0]}"
+        repl_version = '\n'.join(wrapper.wrap(repl_version[0]))
+        description += f"\nMinimum Server Version:\n{repl_version}"
     if repl_local:
-        description += f"\nLocal Mode Only:\n    {repl_local[0]}"
+        repl_local = '\n'.join(wrapper.wrap(repl_local[0]))
+        description += f"\nLocal Mode Only:\n{repl_local}"
     # Additional newline before warning to make sphinx happy
     if repl_note:
-        description += f"\n\nWarning:\n    {repl_note[0]}"
+        repl_note = '\n'.join(wrapper.wrap(repl_note[0]))
+        description += f"\nWarning:\n{repl_note}"
 
     return description

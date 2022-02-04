@@ -123,7 +123,7 @@ class Project:
         shutil.rmtree(self.package_dir)
         self._build_track_file()
         self._create_package()
-        # self._build_models()
+        #self._build_models()
         self._build_models_file()
         self._build_api()
         #        self._build_api_modules()
@@ -343,8 +343,7 @@ class Project:
         #        api_init = endpoint_sync_dir / "__init__.py"
         #        api_init.write_text('""" Contains classes for accessing the API """', encoding=self.file_encoding)
 
-        endpoint_sync_template = self.env.get_template("mattermost/endpoint_class_sync.py.jinja")
-        endpoint_async_template = self.env.get_template("mattermost/endpoint_class_async.py.jinja")
+        endpoint_template = self.env.get_template("mattermost/endpoint_class_body.py.jinja")
 
         oidmapping = dict()
         oidmapping_file = Path("operationid_mapping.json")
@@ -402,18 +401,20 @@ class Project:
 
             endpoint_sync_path = endpoint_sync_dir / f"{snake_case(tag)}.py"
             endpoint_sync_path.write_text(
-                endpoint_sync_template.render(
-                    tag=utils.pascal_case(tag), collection=collection, description=tag_map.setdefault(snake_case(tag))
+                endpoint_template.render(
+                    tag=utils.pascal_case(tag), collection=collection, description=tag_map.setdefault(snake_case(tag)), 
+                    async_class=False,
                 ),
                 encoding=self.file_encoding,
             )
 
             endpoint_async_path = endpoint_async_dir / f"{snake_case(tag)}.py"
             endpoint_async_path.write_text(
-                endpoint_async_template.render(
+                endpoint_template.render(
                     tag=utils.pascal_case(tag),
                     collection=collection,
                     description=tag_map.setdefault(snake_case(tag), ""),
+                    async_class=True,
                 ),
                 encoding=self.file_encoding,
             )
