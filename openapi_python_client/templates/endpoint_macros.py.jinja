@@ -40,7 +40,7 @@ params: Dict[str, Any] = {
             {% if property.template %}
     "{{ property.name }}": {{ "json_" + property.python_name }},
             {% else %}
-    "{{ property.name }}": {{ property.python_name }},
+    "{{ property.name }}": {{ property.name }},
             {% endif %}
         {% endif %}
     {% endfor %}
@@ -70,6 +70,7 @@ params = {k: v for k, v in params.items() if v is not None}
     {% endif %}
 {% endif %}
 {% endmacro %}
+
 
 {% macro return_type(endpoint) %}
 {% set response_strings = endpoint.response_types | unique | list %}
@@ -119,11 +120,11 @@ form_data: {{ endpoint.form_body_reference.get_type_string() }},
 {% endif %}
 {# Multipart data if any #}
 {% if endpoint.multipart_body_reference %}
-multipart_data: {{ endpoint.multipart_body_reference.get_type_string() }},
+multipart_data: Union[{{ endpoint.multipart_body_reference.get_type_string() }}, Dict],
 {% endif %}
 {# JSON body if any #}
 {% if endpoint.json_body %}
-json_body: {{ endpoint.json_body.get_type_string() }},
+json_body: Union[{{ endpoint.json_body.get_type_string()}}, Dict],
 {% endif %}
 {# query parameters #}
 {% for parameter in endpoint.query_parameters %}

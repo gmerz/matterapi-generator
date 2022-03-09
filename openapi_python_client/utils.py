@@ -64,6 +64,7 @@ def to_valid_python_identifier(value: str) -> str:
         https://docs.python.org/3/reference/lexical_analysis.html#identifiers
     """
     new_value = fix_reserved_words(fix_keywords(sanitize(value)))
+    new_value = new_value.replace("-","_")
 
     if new_value.isidentifier():
         return new_value

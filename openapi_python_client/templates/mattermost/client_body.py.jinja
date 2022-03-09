@@ -2,11 +2,14 @@
 {% set keyword_async = 'async ' if async_class == True else '' %}
 {% set keyword_await = 'await ' if async_class == True else '' %}
 {% set client_type = 'Async' if async_class == True else 'Sync' %}
+""" {{client_type}} client to access the mattermost API """
+
 from contextlib import {{keyword_type_async | lower}}contextmanager
 from typing import Optional
 
 import httpx
 from pydantic import PrivateAttr
+from collections.abc import {{keyword_type_async}}Generator
 
 from .base import AuthLogin, AuthToken, BaseClient, HttpxClientOptions
 from .exceptions import (
@@ -27,6 +30,41 @@ from ..endpoints.{{client_type | lower}}_api.{{tag | snakecase}} import {{tag | 
 {% endfor %}
 
 
+{{keyword_async }}def raise_on_4xx_5xx(response):
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as http_error:
+        try:
+            {% if async_class %}
+            await http_error.response.aread()
+            {% else %}
+            http_error.response.read()
+            {% endif %}
+            data = http_error.response.json()
+            message = data.get("message", data)
+        except ValueError:
+            message = response.text
+        if http_error.response.status_code == 400:
+            raise InvalidOrMissingParameters(message) from http_error
+        if http_error.response.status_code == 401:
+            raise NoAccessTokenProvided(message) from http_error
+        if http_error.response.status_code == 403:
+            raise NotEnoughPermissions(message) from http_error
+        if http_error.response.status_code == 404:
+            raise ResourceNotFound(message) from http_error
+        if http_error.response.status_code == 405:
+            raise MethodNotAllowed(message) from http_error
+        if http_error.response.status_code == 413:
+            raise ContentTooLarge(message) from http_error
+        if http_error.response.status_code == 429:
+            raise TooManyRequests(message) from http_error
+        if http_error.response.status_code == 500:
+            raise InternalServerError(message) from http_error
+        if http_error.response.status_code == 501:
+            raise FeatureDisabled(message) from http_error
+        raise
+
+
 class {{ client_type }}Client(BaseClient):
     """Synchronous mattermost api client implementation"""
 
@@ -42,14 +80,14 @@ class {{ client_type }}Client(BaseClient):
         )
         base_url = str(httpx.URL(self.options.url).join(self.options.basepath))
         httpx_client = httpx.{{  keyword_type_async }}Client(base_url=base_url, **dict(httpx_client_options))
-        httpx_client.event_hooks["response"] = [self.raise_on_4xx_5xx] + httpx_client.event_hooks[
+        httpx_client.event_hooks["response"] = [raise_on_4xx_5xx] + httpx_client.event_hooks[
             "response"
         ]
         if isinstance(self.options.auth, AuthToken):
             httpx_client.auth = self.options.auth
             self.active_token = self.options.auth.token
         if isinstance(self.options.auth, AuthLogin):
-            """Login with username and password and get a session_token"""
+            # Login with username and password and get a session_token
             response = {{keyword_await}}httpx_client.post(
                 url="/users/login", json=self.options.auth.dict(exclude_unset=True)
             )
@@ -58,39 +96,6 @@ class {{ client_type }}Client(BaseClient):
             self.active_token = session_token
         return httpx_client
 
-    {{keyword_async }}def raise_on_4xx_5xx(self, response):
-        try:
-            response.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            try:
-                {% if async_class %}
-                await e.response.aread()
-                {% else %}
-                e.response.read()
-                {% endif %}
-                data = e.response.json()
-                message = data.get("message", data)
-            except ValueError:
-                message = response.text
-            if e.response.status_code == 400:
-                raise InvalidOrMissingParameters(message) from e
-            if e.response.status_code == 401:
-                raise NoAccessTokenProvided(message) from e
-            if e.response.status_code == 403:
-                raise NotEnoughPermissions(message) from e
-            if e.response.status_code == 404:
-                raise ResourceNotFound(message) from e
-            if e.response.status_code == 405:
-                raise MethodNotAllowed(message) from e
-            if e.response.status_code == 413:
-                raise ContentTooLarge(message) from e
-            if e.response.status_code == 429:
-                raise TooManyRequests(message) from e
-            if e.response.status_code == 500:
-                raise InternalServerError(message) from e
-            if e.response.status_code == 501:
-                raise FeatureDisabled(message) from e
-            raise
 
     {{keyword_async }}def _login(self):
         """Calling this creates a httpx client and sets .active_token, needed for websockets"""
@@ -113,8 +118,9 @@ class {{ client_type }}Client(BaseClient):
             yield self._httpx_client
 
     @{{keyword_type_async | lower}}contextmanager
-    {{ keyword_async }}def session(self):
+    {{ keyword_async }}def session(self) -> {{ keyword_type_async }}Generator["{{client_type}}Client", None, None]:
         """Open a Session which re-uses the underlying httpx client and it's connections"""
+        # pylint: disable=protected-access
         api_client = self.copy()
         api_client._httpx_client = {{ keyword_await }}api_client._create_httpx_client()
         try:

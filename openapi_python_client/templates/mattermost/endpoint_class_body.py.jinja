@@ -1,7 +1,7 @@
 {% set keyword_async = 'async ' if async_class == True else '' %}
 {% set keyword_await = 'await ' if async_class == True else '' %}
 """ Module to access the {{tag}} endpoints """
-# pylint: disable=too-many-lines,too-many-locals,too-many-public-methods
+# pylint: disable=too-many-lines,too-many-locals,too-many-public-methods,too-few-public-methods
 
 from typing import Any, Dict, List, Optional, Union, cast
 from ..base import ApiBaseClass

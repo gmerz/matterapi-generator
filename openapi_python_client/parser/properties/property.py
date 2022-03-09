@@ -34,7 +34,9 @@ class Property:
     json_is_dict: ClassVar[bool] = False
 
     def __attrs_post_init__(self) -> None:
-        object.__setattr__(self, "python_name", utils.to_valid_python_identifier(utils.snake_case(self.name)))
+        python_name = utils.to_valid_python_identifier(utils.snake_case(self.name))
+        #python_name = utils.to_valid_python_identifier(self.name)
+        object.__setattr__(self, "python_name", python_name)
 
     def get_base_type_string(self) -> str:
         return self._type_string
@@ -88,6 +90,7 @@ class Property:
         #            imports.add(f"from {prefix}types import UNSET, Unset")
         return imports
 
+
     def to_string(self) -> str:
         """How this should be declared in a dataclass"""
         default: Optional[str]
@@ -95,13 +98,36 @@ class Property:
             default = self.default
         else:
             default = None
+ 
 
-        if default is not None:
-            return f"{self.python_name}: {self.get_type_string()} = {default}"
-        elif not self.required:
-            return f"{self.python_name}: {self.get_type_string()} = None"
+        if default is not None or not self.required:
+            return f"{self.name}: {self.get_type_string()} = {default}"
+        #elif not self.required:
+        #    return f"{self.python_name}: {self.get_type_string()} = None"
         else:
-            return f"{self.python_name}: {self.get_type_string()}"
+            return f"{self.name}: {self.get_type_string()}"
+
+
+    def to_model_string(self) -> str:
+        """How this should be declared in a dataclass"""
+        default: Optional[str]
+        if self.default is not None:
+            default = self.default
+        else:
+            default = None
+ 
+        field_alias = False
+        if self.name != self.python_name:
+            field_alias = True
+
+        if default is not None or not self.required:
+            field = f'Field({default},alias="{self.name}")' if field_alias else default
+            return f"{self.python_name}: {self.get_type_string()} = {field}"
+        #elif not self.required:
+        #    return f"{self.python_name}: {self.get_type_string()} = None"
+        else:
+            field = f' = Field(alias="{self.name}")' if field_alias else ""
+            return f"{self.python_name}: {self.get_type_string()}{field}"
 
     def to_docstring(self) -> str:
         """Returns property docstring"""

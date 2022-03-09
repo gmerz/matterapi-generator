@@ -759,10 +759,12 @@
         "delete": "DeleteLdapPrivateCertificate"
     },
     "/groups": {
-        "get": "GetGroups"
+        "get": "GetGroups",
+        "post": "CreateGroup"
     },
     "/groups/{group_id}": {
-        "get": "GetGroup"
+        "get": "GetGroup",
+        "delete": "DeleteGroup"
     },
     "/groups/{group_id}/patch": {
         "put": "PatchGroup"
@@ -794,7 +796,9 @@
         "put": "PatchGroupSyncableForChannel"
     },
     "/groups/{group_id}/members": {
-        "get": "GetGroupUsers"
+        "get": "GetGroupUsers",
+        "post": "AddGroupMembers",
+        "delete": "DeleteGroupMembers"
     },
     "/groups/{group_id}/stats": {
         "get": "GetGroupStats"
@@ -1051,7 +1055,7 @@
         "get": "GetAncillaryPermissions"
     },
     "/trial-license/prev": {
-        "get": "get_trial-license_prev"
+        "get": "GetPrevTrialLicense"
     },
     "/roles": {
         "get": "GetAllRoles"
