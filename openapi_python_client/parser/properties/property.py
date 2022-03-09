@@ -51,7 +51,6 @@ class Property:
             json: True if the type refers to the property after JSON serialization
         """
         type_string = self._type_string
-
         if json:
             type_string = self.get_base_json_type_string()
         else:
@@ -59,7 +58,7 @@ class Property:
 
         if no_optional or (self.required and not self.nullable):
             #        if no_optional:
-            return self._type_string
+            return type_string
         if self.nullable:
             # type_string = f"Union[{type_string},None]"
             type_string = f"Optional[{type_string}]"
